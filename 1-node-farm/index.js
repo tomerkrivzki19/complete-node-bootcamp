@@ -1,3 +1,4 @@
+const { log } = require('console');
 const fs = require('fs');
 const http = require('http');
 const url = require('url');
@@ -33,15 +34,22 @@ const url = require('url');
 
 /////////////////////////////////////
 // SERVER
+// can use `${__dirname}, but for some reason not working for me.
+ const data = fs.readFileSync('./starter/dev-data/data.json','utf-8');
+ const dataObj = JSON.parse(data);
+//  console.log(data);
 const server = http.createServer((req, res)=>{
 
     const pathName = req.url;
 
     if(pathName === '/' || pathName === '/overview'){
         res.end('This is the OVERVIEW ');
-     
+      
     }else if(pathName === '/product'){
         res.end('This is the PRODUCT')
+    }else if(pathName === '/api'){
+        res.writeHead(200,{'content-type': 'application/json'});
+        res.end(data);
     }else{
         res.writeHead(404,{
             'Content-type': 'text/html',
