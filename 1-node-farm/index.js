@@ -2,6 +2,7 @@ const { log } = require('console');
 const fs = require('fs');
 const http = require('http');
 const url = require('url');
+const replaceElemente = require('./starter/modules/replaceElemente');
 
 /////////////////////////////////////
 // FILES
@@ -34,20 +35,47 @@ const url = require('url');
 
 /////////////////////////////////////
 // SERVER
-// can use `${__dirname}, but for some reason not working for me.
- const data = fs.readFileSync('./starter/dev-data/data.json','utf-8');
+
+//  "id": 0,
+    // "productName": "Fresh Avocados",
+    // "image": "🥑",
+    // "from": "Spain",
+    // "nutrients": "Vitamin B, Vitamin K",
+    // "quantity": "4 🥑",
+    // "price": "6.50",
+    // "organic": true,
+    // "description": "A ripe 
+
+
+ const overview_tamplate = fs.readFileSync(`${__dirname}/starter/templates/overview.html`,'utf-8')
+ const card_tempalte = fs.readFileSync(`${__dirname}/starter/templates/card.html`,'utf-8')
+ const product_template = fs.readFileSync(`${__dirname}/starter/templates/product.html`,'utf-8')
+
+
+ const data = fs.readFileSync(`${__dirname}/starter/dev-data/data.json`,'utf-8');
  const dataObj = JSON.parse(data);
-//  console.log(data);
+
+
+    //the router --server 
 const server = http.createServer((req, res)=>{
-
     const pathName = req.url;
-
-    if(pathName === '/' || pathName === '/overview'){
-        res.end('This is the OVERVIEW ');
+    const { pathname , query} = url.parse(req.url , true);
       
-    }else if(pathName === '/product'){
-        res.end('This is the PRODUCT')
-    }else if(pathName === '/api'){
+    // overview page
+    if(pathname === '/' || pathname === '/overview'){
+      res.writeHead(200,{"content-type":"text/html"});
+     const cardsHtml = dataObj.map(element => replaceElemente(card_tempalte, element)).join('');
+    const output = overview_tamplate.replace('{%productCards%}',cardsHtml)
+     res.end(output);
+
+    // product page
+    }else if(pathname === '/product'){
+        res.writeHead(200,{"content-type":"text/html"});
+        const product = dataObj[query.id];
+        const output =replaceElemente(product_template, product);
+         res.end(output);
+    // API
+    }else if(pathname === '/api'){
         res.writeHead(200,{'content-type': 'application/json'});
         res.end(data);
     }else{
