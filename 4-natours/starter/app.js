@@ -2,11 +2,12 @@ const express = require('express');
 const morgan = require('morgan');
 const app = express();
 
-const userRouter = require('./routes/clientsRoutes');
 const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/clientsRoutes');
 // exapale of middaleeare:
 app.use(morgan('dev'));
 app.use(express.json());
+app.use(express.static('./public'));
 app.use((req, res, next) => {
   console.log('Hello from the middleware function 👋');
   next();

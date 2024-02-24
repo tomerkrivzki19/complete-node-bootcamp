@@ -4,6 +4,30 @@ const toursFile = JSON.parse(
   fs.readFileSync('../starter/dev-data/data/tours-simple.json')
 );
 
+exports.checkBody = (req, res, next) => {
+  let { name, price } = req.body;
+  if (!name || !price) {
+    return res.status(400).json({
+      status: 'faild',
+      message: 'not vaild',
+    });
+  }
+  next();
+};
+
+exports.checkId = (req, res, next, val) => {
+  console.log(`tour id is : ${val}`);
+
+  if (req.params.id * 1 > toursFile.length) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'something went wrong',
+      //this message is also a security mesaage that no to give ant inforamtion to hackers that tring to collect inforamtion about my client for examaple
+    });
+  }
+  next();
+};
+
 // **** To make our code more arrange we can to make a callback function out side the request's and that will make to use more understand the code more then when the callbacks function are inside the reqeust's.
 exports.getAllTours = (req, res) => {
   console.log(req.requestTime);
@@ -28,13 +52,13 @@ exports.getTour = (req, res) => {
   //first solution --
   // if (id > toursFile.length) {
   //seconed solution -- is more speesific to our case
-  if (!tour) {
-    res.status(404).json({
-      status: 'fail',
-      message: 'somthing went wrong',
-      //this message is also a sequrity mesaage that no to give ant inforamtion to hackers that tring to collect inforamtion about my client for examaple
-    });
-  }
+  // if (!tour) {
+  //   res.status(404).json({
+  //     status: 'fail',
+  //     message: 'somthing went wrong',
+  //     //this message is also a sequrity mesaage that no to give any inforamtion to hackers that tring to collect inforamtion about my client for examaple
+  //   });
+  // }
 
   res.status(200).json({
     status: 'success',
@@ -66,13 +90,13 @@ exports.createTour = (req, res) => {
   // res.send('done!');
 };
 exports.updateTour = (req, res) => {
-  if (req.params.id * 1 > toursFile.length) {
-    return res.status(404).json({
-      status: 'fail',
-      message: 'something went wrong',
-      //this message is also a security mesaage that no to give ant inforamtion to hackers that tring to collect inforamtion about my client for examaple
-    });
-  }
+  // if (req.params.id * 1 > toursFile.length) {
+  //   return res.status(404).json({
+  //     status: 'fail',
+  //     message: 'something went wrong',
+  //     //this message is also a security mesaage that no to give ant inforamtion to hackers that tring to collect inforamtion about my client for examaple
+  //   });
+  // }
 
   res.status(200).json({
     status: 'success',
@@ -82,14 +106,6 @@ exports.updateTour = (req, res) => {
   });
 };
 exports.deleteTour = (req, res) => {
-  if (req.params.id * 1 > toursFile.length) {
-    return res.status(404).json({
-      status: 'fail',
-      message: 'something went wrong',
-      //this message is also a security mesaage that no to give ant inforamtion to hackers that tring to collect inforamtion about my client for examaple
-    });
-  }
-
   res.status(204).json({
     status: 'success',
     data: null,
