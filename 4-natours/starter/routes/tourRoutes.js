@@ -9,13 +9,14 @@ const router = express.Router();
 
 //middleWare indise the route
 //*id there is no param the code will ignore that middale wahre and move on
-router.param('id', tourControllers.checkId);
+// router.param('id', tourControllers.checkId);
 
 // api/v1/tours'
 router
   .route('/')
   .get(tourControllers.getAllTours)
-  .post(tourControllers.checkBody, tourControllers.createTour);
+  .post(tourControllers.createTour);
+// tourControllers.checkBody -- > exmaple of middleware
 router
   .route('/:id')
   .get(tourControllers.getTour)
