@@ -11,6 +11,9 @@ const router = express.Router();
 //*id there is no param the code will ignore that middale wahre and move on
 // router.param('id', tourControllers.checkId);
 
+router
+  .route('/top-5-cheap')
+  .get(tourControllers.aliasTopTours, tourControllers.getAllTours);
 // api/v1/tours'
 router
   .route('/')

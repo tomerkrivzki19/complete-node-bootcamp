@@ -25,10 +25,12 @@ const tourSchema = new mongoose.Schema({
     type: Number,
     // this is a defult value , if we not specify the value of rating the default will be 4.5
     default: 4.5,
+    unique: false,
   },
   ratingsQuantity: {
     type: Number,
     default: 0,
+    unique: false,
   },
   price: {
     type: Number,
@@ -54,6 +56,7 @@ const tourSchema = new mongoose.Schema({
     //the time that the user created a tour
     type: Date, //js build in data type
     default: Date.now(), //give us a time stand in miliseconed -- then in mongo it will converted to a now date
+    select: false, //propaty to hide from the putpot
   },
   startDates: [Date],
 });
