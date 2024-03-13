@@ -232,7 +232,7 @@ exports.updateTour = async (req, res) => {
   try {
     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
-      runValidators: true,
+      runValidators: true, //mybe mot working -not sure becouse mongoose dont eccept new changes in the schema
     });
     res.status(200).json({
       status: 'success',
@@ -262,6 +262,113 @@ exports.deleteTour = async (req, res) => {
     res.status(200).json({
       status: 'success',
       data: tour,
+    });
+  } catch (error) {
+    res.status(404).json({
+      status: 'failed',
+      message: error,
+    });
+  }
+};
+
+exports.getTourStats = async (req, res) => {
+  try {
+    //                  לקבץ
+    const stats = await Tour.aggregate([
+      {
+        $match: { ratingsAverage: { $gte: 4.5 } },
+      },
+      {
+        $group: {
+          //what it does basicly it will run each and each document and will count and group all the counter we selected in the option with the monngose methods that we are selected
+
+          //allow us to grop documnets toghether using acumilators -> acumilator is can for example canculate an avergae for example if we have five tours and each of them have an rating we can canculate the avergae rating using $group
+          //_id: '$difficulty', // it will group all the documents by thier difficulty
+          // _id: '$ratingsAverage',
+          _id: { $toUpper: '$difficulty' }, //toUpper ->  spelling uppercase
+          numTours: { $sum: 1 }, //for each of the document that going to go threw the pipe lline one will be added to this numTours counter
+          numRatings: { $sum: '$ratingsQuantity' },
+          avgRating: { $avg: '$ratingsAverage' }, //an operator that canculatong the average and now the name of the field
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+      {
+        $sort: { avgPrice: 1 }, //the old names we cannot use them becuse in this point they already done , so instead we will use the number 1 for assending
+      },
+      // {
+      //   //we can reped stages
+      //   $match: { _id: { $ne: 'EASY' } }, //$ne => not equal, WE WILL SELECT ALL THE DOCUMENTS THAT ARE NOT EASY,DISCUULDING EASY
+      // },
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      data: stats,
+    });
+  } catch (error) {
+    res.status(404).json({
+      status: 'failed',
+      message: error,
+    });
+  }
+};
+
+exports.getMonthlyPlan = async (req, res) => {
+  //example for a real companies issue | needs
+  //that we need to implement a function to canulate the busiest month  of a giving year--canculating how many tours start in each of the month of the giving year
+  //the company realy need this function to prepare accordingly for those tours - like buy a tour guy or buy an a equipment or stuf like that
+  //to solve this a pipe line could help us solve this issue |need..
+  try {
+    const year = req.params.year * 1; //the trick to trasform this to a number
+    //the year selceted 2021
+    const plan = await Tour.aggregate([
+      {
+        // what we are doing in here we are distracting the startDates inside all the documnts , and instead of 9 documents elemnts we have now 27
+        $unwind: '$startDates', //$unwind => disconstract the array fields from the input documnets and then output one documnet for each elemnt of the array
+      },
+      {
+        $match: {
+          //we want to be between 2020 - 2022
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`), // we want it to be between the first day in the year and the last the day of the year
+            //less ten..
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$startDates' }, //$month =>extract the month out of our date, we have in mongoose documantation a"ton" of this type of pipe line oparetors
+          numTourStarts: { $sum: 1 }, //to count the number of tours
+          tours: { $push: '$name' }, //$push --> will make us an array and push to this array...
+        },
+      },
+      {
+        //addFields => just like his name , making us a new fields
+        $addFields: { month: '$_id' }, // add the vlue of the name _id , so in this case _id have the month value
+      },
+      {
+        //$project --> an stage that set the value of the current thing we want to display if it current to 0 => it will not longer show up if we definf the project as 1 -> it will project
+        $project: {
+          _id: 0, //0-> not showed up , 1 -> showing up
+        },
+      },
+      {
+        //we hade 1 before so 1 is for asending and -1 is for de-sending
+        $sort: { numTourStarts: -1 }, // we want it to sort with the hight number of tours to the lowest -> so we  will do if we want to display the deposite of that we will basiclt change it to 1
+        //inside the route call we could see that in month number 7 we having the most tours
+      },
+      {
+        $limit: 12, //limting us to only 12 outpots
+      },
+    ]);
+    res.status(200).json({
+      status: 'success',
+      data: {
+        plan,
+      },
     });
   } catch (error) {
     res.status(404).json({

@@ -14,6 +14,10 @@ const router = express.Router();
 router
   .route('/top-5-cheap')
   .get(tourControllers.aliasTopTours, tourControllers.getAllTours);
+
+router.route('/tour-stats').get(tourControllers.getTourStats);
+router.route('/monthly-plan/:year').get(tourControllers.getMonthlyPlan);
+
 // api/v1/tours'
 router
   .route('/')
