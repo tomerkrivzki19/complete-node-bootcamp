@@ -1,6 +1,8 @@
 const fs = require('fs');
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 
 // const toursFile = JSON.parse(
 //   fs.readFileSync('../starter/dev-data/data/tours-simple.json')
@@ -156,10 +158,17 @@ exports.getAllTours = async (req, res) => {
     });
   }
 };
-exports.getTour = async (req, res) => {
+exports.getTour = /*catchAsync(*/ async (req, res, next) => {
+  //for the try and catch req:
   try {
     const tour = await Tour.findById(req.params.id);
     //                 Tour.findOne({_id : req.params.id})
+    //for the 404 cases -- in this case we pass the error to the error handler and then pass them 404 error
+    if (!tour) {
+      return next(new AppError('No tour found with that ID ', 404)); // we seting return becouse we want to return this function imidiatly and not move on to the next line , and willl run two responses
+      //the err object that we created
+      //what happend here is , that when we passing to next an argument it will return a error , and that err will passed to the error middleware handler that we created
+    }
     res.status(200).json({
       status: 'success',
       data: {
@@ -167,20 +176,38 @@ exports.getTour = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(404).json({
-      status: 'failed',
-      message: error,
-    });
+    //regular solution for try and catch
+    // res.status(404).json({
+    //   status: 'failed',
+    //   message: error,
+    // });
+
+    //solution for the middleware err funtion
+    next(error);
   }
+
+  //SOLUTION FOR THE CATCHASYNC FUNCTION :
+  // const tour = await Tour.findById(req.params.id);
+  // //                 Tour.findOne({_id : req.params.id})
+  // //for the 404 cases -- in this case we pass the error to the error handler and then pass them 404 error
+  // if (!tour) {
+  //   return next(new AppError('No tour found with that ID ', 404)); // we seting return becouse we want to return this function imidiatly and not move on to the next line , and willl run two responses
+  //   //the err object that we created
+  //   //what happend here is , that when we passing to next an argument it will return a error , and that err will passed to the error middleware handler that we created
+  // }
+  // res.status(200).json({
+  //   status: 'success',
+  //   data: {
+  //     tours: tour,
+  //   },
+  // });
+  // --------------------------------------------
 
   // console.log(req.params);
   // const id = req.params.id * 1;
   // we done this becouse on the params output we have the outpot as a string , so on this js trick we converting the string to a number
-
   // const tour = toursFile.find((el) => el.id === id);
-
   // if there are not sutch as existing id , then we need to make sure that the client not gets a 200 status code and also make sure that there is the right message for the client side
-
   //first solution --
   // if (id > toursFile.length) {
   //seconed solution -- is more speesific to our case
@@ -191,24 +218,37 @@ exports.getTour = async (req, res) => {
   //     //this message is also a sequrity mesaage that no to give any inforamtion to hackers that tring to collect inforamtion about my client for examaple
   //   });
   // }
-};
-exports.createTour = async (req, res) => {
-  try {
-    const newTour = await Tour.create(req.body);
-    console.log(newTour);
-    res.status(201).json({
-      status: 'success',
-      data: {
-        tour: newTour,
-      },
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(400).json({
-      status: 'failed',
-      message: 'Invaild data sent!',
-    });
-  }
+}; //);
+
+//what we have done here in this example is that we wrap our asyncfunction inside of the catchAsync funtion => this function will return a new anonimuse funnction (the function that inside of the return ) and then will be assing to create tour handaler
+exports.createTour = catchAsync(async (req, res) => {
+  //example of req handlare with try and catch
+  // try {
+  //   const newTour = await Tour.create(req.body);
+  //   console.log(newTour);
+  //   res.status(201).json({
+  //     status: 'success',
+  //     data: {
+  //       tour: newTour,
+  //     },
+  //   });
+  // } catch (err) {
+  //   console.log(err);
+  //   res.status(400).json({
+  //     status: 'failed',
+  //     message: 'Invaild data sent!',
+  //   });
+  // }
+  //EXAMPLE OF REQ WITH THE CATCH-AYSNC FUNCTION -> that was made to replace our try and catch function and move the err to the err handalere that we created
+  const newTour = await Tour.create(req.body);
+
+  console.log(newTour);
+  res.status(201).json({
+    status: 'success',
+    data: {
+      tour: newTour,
+    },
+  });
 
   // console.log(req.body);
   // const newId = toursFile[toursFile.length - 1].id + 1;
@@ -227,13 +267,19 @@ exports.createTour = async (req, res) => {
   //   }
   // );
   // res.send('done!');
-};
-exports.updateTour = async (req, res) => {
+});
+
+exports.updateTour = async (req, res, next) => {
   try {
     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true, //mybe mot working -not sure becouse mongoose dont eccept new changes in the schema
     });
+
+    if (!tour) {
+      return next(new AppError('No tour found with that ID', 404));
+    }
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -255,9 +301,13 @@ exports.updateTour = async (req, res) => {
   //   });
   // }
 };
-exports.deleteTour = async (req, res) => {
+exports.deleteTour = async (req, res, next) => {
   try {
     const tour = await Tour.findByIdAndDelete(req.params.id);
+
+    if (!tour) {
+      return next(new AppError('No tour found with that ID', 404));
+    }
 
     res.status(200).json({
       status: 'success',
