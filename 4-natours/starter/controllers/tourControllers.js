@@ -287,10 +287,11 @@ exports.updateTour = async (req, res, next) => {
       },
     });
   } catch (error) {
-    res.status(404).json({
-      status: 'failed',
-      message: error,
-    });
+    // res.status(404).json({
+    //   status: 'failed',
+    //   message: error,
+    // });
+    next(error);
   }
 
   // if (req.params.id * 1 > toursFile.length) {
