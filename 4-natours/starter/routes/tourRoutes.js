@@ -1,5 +1,6 @@
 const express = require('express');
 const tourControllers = require('../controllers/tourControllers');
+const authController = require('../controllers/authController');
 // we could also make a shortcut by destractaring the callbacks when importing them from exports
 // const {getAllTours,createTour,getTour, updateTour, deleteTour } = require('../controllers/tourControllers');
 // this will short us when we applyig the callback to the route.
@@ -21,7 +22,8 @@ router.route('/monthly-plan/:year').get(tourControllers.getMonthlyPlan);
 // api/v1/tours'
 router
   .route('/')
-  .get(tourControllers.getAllTours)
+  //a middleware function that check if there valid JWT
+  .get(authController.protect, tourControllers.getAllTours)
   .post(tourControllers.createTour);
 // tourControllers.checkBody -- > exmaple of middleware
 router

@@ -25,6 +25,12 @@ const handleCastErrorDB = (err) => {
   return new AppError(message, 400);
 };
 
+const handaleJWTError = () =>
+  new AppError('Invalid token please log in again!.', 401);
+
+const handaleJWTExpiredError = () =>
+  new AppError('Your token has expired! please log in again.', 401);
+
 const sendErrorDev = (err, res) => {
   return res.status(err.statusCode).json({
     status: err.status,
@@ -44,6 +50,7 @@ const sendErrorProd = (err, res) => {
     });
 
     //Programing or other unknown error: don't leak error details
+    //  ---------------------------------------------------------
   } else {
     //1)Log error
     console.log('ERROR 💣', err);
@@ -76,6 +83,11 @@ module.exports = (err, req, res, next) => {
     //if(message.name === 'CastError') --> this is the err that the client geting in some cases , we got the path to the error from postman by simply wroting wrong / false details
     //console.log('error name:', err.name); //for testig !
     if (err.name === 'ValidationError') error = handleValidatorErrorDB(error);
+    //TODO:
+    // ERR HANDLER FOR JWT TOKEN MIDDLEWARE:
+    if (err.name === 'JsonWebTokenError') error = handaleJWTError();
+    // for expired tokens:
+    if (err.name === 'TokenExpiredError') error = handaleJWTExpiredError();
 
     //error handeler for create tour with the same name ,we want to change to context that presented to the client,
     //so in this case what we are doing is to compare the "code": 11000,message from the error it-self

@@ -1,7 +1,12 @@
 const express = require('express');
 const clientControllers = require('../controllers/clientControllers');
+const authController = require('../controllers/authController');
 
 const router = express.Router();
+
+router.post('/singup', authController.singup);
+router.post('/login', authController.login);
+
 ///api/v1/users
 router
   .route('/')
