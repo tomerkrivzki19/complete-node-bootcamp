@@ -7,6 +7,17 @@ const router = express.Router();
 router.post('/singup', authController.singup);
 router.post('/login', authController.login);
 
+//user friendly forget password functionality
+router.post('/forgotPassword', authController.forgotPassword);
+router.patch('/resetPassword/:token', authController.resetPassword);
+
+//we doing patch becouse we manipulatiog the user document
+router.patch(
+  '/updateMyPassword',
+  authController.protect,
+  authController.updatePassword
+);
+
 ///api/v1/users
 router
   .route('/')

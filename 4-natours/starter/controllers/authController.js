@@ -1,9 +1,11 @@
+const crypto = require('crypto');
 const { promisify } = require('util'); //a build in promisify function is in node libary -> make it return promise.
 //es6-distructaring
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 //const catchAsync = require('../utils/catchAsync'); // a function that we made instead of trycatch
 const AppError = require('../utils/appError');
+const sendEmail = require('../utils/email');
 
 // A global jwt creation function, to save us some time
 const signToken = (id) => {
@@ -11,6 +13,20 @@ const signToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
     //the settings to the jwt
     expiresIn: process.env.JWT_EXPIRING_IN, //the expiring time that we have set inside of the proccess.env
+  });
+};
+// a function that will create and send us token if the user finished the proccess
+// we doing it becouse we see that this proccess is reapets itself each and each time , this is why we creating this function to make us a shortcut and by doing that make our code lokke more arregend
+const createSendToken = (user, statusCode, res) => {
+  //                user ->  the user argument!
+  const token = signToken(user._id);
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user, // user ->  the user argument! | user = user
+    },
   });
 };
 
@@ -26,15 +42,17 @@ exports.singup = async (req, res, next) => {
       passwordConfirm: req.body.passwordConfirm,
       passwordChangedAt: req.body.passwordChangedAt, //FOT THE OPTION OF CHEKING
     });
-    const token = signToken(newUser._id);
+    createSendToken(newUser, 201, res);
 
-    res.status(201).json({
-      status: 'success',
-      token,
-      data: {
-        user: newUser,
-      },
-    });
+    // const token = signToken(newUser._id);
+
+    // res.status(201).json({
+    //   status: 'success',
+    //   token,
+    //   data: {
+    //     user: newUser,
+    //   },
+    // });
   } catch (error) {
     next(error);
   }
@@ -61,11 +79,13 @@ exports.login = async (req, res, next) => {
     }
 
     //3) If everything ok, send token to client
-    const token = signToken(user._id);
-    return res.status(200).json({
-      status: 'success',
-      token,
-    });
+
+    createSendToken(user, 200, res);
+    // const token = signToken(user._id);
+    // return res.status(200).json({
+    //   status: 'success',
+    //   token,
+    // });
   } catch (error) {
     next(error);
   }
@@ -125,7 +145,7 @@ exports.protect = async (req, res, next) => {
     //4) Check if user changed password after the token was issued
     //* to check that we will create a new instance method that will be isuued for all documents in the model  , documents are instanses of a model
 
-    //                 iat: 1712842541 like in the exmple below
+    //                 iat: 1712842541 like in the exmple above
     if (currentUser.changedPasswordAfter(decoded.iat)) {
       // * if the user is actualy changed their password so then we want this err to happen
       // * if the password was actually changed so we want an error
@@ -141,6 +161,177 @@ exports.protect = async (req, res, next) => {
     // put the intire user data on the req:
     req.user = currentUser; // we puting inside req.user the new user data!, that way the data will be avaible in next middleware function , this req bject travels from middleware to middleware
     next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Authorization
+//exampe for explalation -> deleting a tour from db , not every user shuld be allowed to that even if the user login
+//to that we need to authorization only types of user that could to surten actions
+
+//Authorization-- verifying if surten users have the rights to interact with surten resourse(even if login!).
+
+//here we need a way of passing arguments to middleware function!
+//the solution to that is to create a wraper function whitch then return the middleware funtion that we actully want to create
+
+//   ...roles-> will create an array of all arguments that was specified
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    //roles ['admin' , 'lead-guide'] => we will give access when this type of role are passed in
+    //role = 'user' => not contains in this array so the 'user' will not ger prommision
+    // the code for that :
+
+    //the type of rolde is included inside the req becouse on protect middleware we stored the current user inside the req, in the middleware below
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('you do not have promission to preform this action ', 403) //403-> forbiten
+      );
+    }
+    //if included  =>
+    next();
+  };
+};
+
+//user friendly password functionality                            TODO:
+//setp 1:
+//user send post req to forget password route only with email adress
+// then it will create a reset token and send that to the eamil that was provided (simple random token not a json web token  )
+//
+
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    //1) Get user based on POSTed email
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return next(new AppError('There is no user with email adress', 404));
+    }
+
+    //2) Generate the random token
+    //need to create instance with the user data - inside the user model
+
+    const resetToken = user.createPasswordResetToken(); //modifiay the data
+    //validateBeforeSave: false ==> de-activate all the validators that we have set in our schema -> in here its avoiding problems becouse there no need in the requirments that we set in the schema
+    await user.save({ validateBeforeSave: false }); //now we need to save it
+
+    //3) send it to user's email
+    const resetURL = `${req.protocol}://${req.get(
+      'host'
+    )}/api/v1/users/resetPassword/${resetToken}`; //the user click on the email and then she will be abale to do the req from there , we will duplicate that when we nuild our dynamic website
+
+    const message = `Forgot your password? submit a PATCH request with your new password and passwordconfirm to: ${resetURL}.\nif you didn't forget your password, please ignore this email!`;
+
+    //there a way that the sendEmail progress will not succed so there for we want to make more then sending just a err message, we need to set back the password reset token and the password perset exxpired that we defind
+    try {
+      //the sendEmail function is a a-sync function and also she contain an options inside her
+      await sendEmail({
+        email: user.email, // : req.body.email ->  exactly the same
+        subject: 'Your password rest token (valid for 10 min)',
+        message,
+      });
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Token sent to email',
+        //we are not puting the token here becouse this is not secured and we dont want anybody to detect the token that way the could not hacked the account
+      });
+    } catch (error) {
+      user.passwordResetToken = undefined; // reset both token and expired proparties
+      user.passwordResetExpiers = undefined;
+      await user.save({ validateBeforeSave: false }); // to save the proccess
+
+      return next(
+        new AppError('There was an error sending the email.  Try again later!'),
+        500
+      );
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+//step 2:
+// the user sends that new token from his email with a new password in order to update his password
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    //1) Get user based on the token  -
+    // incrypted the original token again so we can compare it  with the one that stored in the db, that is also incrypted
+
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(req.params.token) // the path /resetPassword/:token --
+      .digest('hex');
+
+    //get the user -this token is the only thing that can get us access to that user
+    const user = await User.findOne({
+      passwordRestToken: hashedToken, // we loking for the hash token here that the user set on the url
+      passwordResetExpires: { $gt: Date.now() }, //we want to check if the passwordResetExpiers proparty is greater then now , becouse if the passwordResetExpiers date is greater then now it means tha in the futuer it hasent been expired
+      //mongo db will convert everything to the same and there for will be able to copmare them acurdly
+    });
+
+    //* in this procees we cheking the user fot the token and also check if the token has not been yet expired
+
+    //2) If token has not expired, and there is user, set the new password
+    //here we want to send a err if there not user and also the token has been expired
+
+    if (!user) {
+      return next(new AppError('Token is invalid or has been expired', 400));
+    }
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    user.passwordRestToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save(); // save the proccess
+
+    //3) Update changedPasswordAt property for the user
+
+    //4) Log the user in, send JWT
+    createSendToken(user, 200, res);
+
+    // const token = signToken(user._id);
+
+    // return res.status(200).json({
+    //   status: 'success',
+    //   token,
+    // });
+    //after that step the passwordResetExpiers & passwordResetToken is not deleted from db , check it out -> but it bloking after time out so we good for now
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updatePassword = async (req, res, next) => {
+  try {
+    //we need the user to pass his current password for security matters
+    //exmaple -> if someone enter tour computer when the computer is on and change the password , then is could be wrong , to avoid thos kind og situation we need to make sure that the user put his password first and from there to continue
+    //1)Get the user from collection
+    //                               .select => when we finding the user by it own id we want also to bring his password on the result
+    const user = await User.findById(req.user.id).select('+password'); // we find by the req id becouse in this endpoint the user is already log in , and in the end points beloow  we defind that the user data is proccess threw the req
+    //2) Check if POSTed  current password is correct
+    console.log('user', user);
+    //  const passwordCheck =   user.currectPassword(req.body.passwordConfirm, user.password);
+    if (
+      !(await user.currectPassword(req.body.passwordCurrent, user.password))
+    ) {
+      return next(
+        new AppError('The current password that provided is wrnog!', 401)
+      );
+    }
+    //3) If so , update the passsword
+    user.password = req.body.password; // seting the password inside the db , to the password that the user provided
+    user.passwordConfirm = req.body.passwordConfirm; //seting the passwordConfirm inside the db , to the passwordConfirm that the user provided
+    await user.save(); //saving the proccess inside the DB
+    //4) Log user in , send JWT
+    //                      the id from the user , at the first line we found the user id , when we was serching for the user password
+    createSendToken(user, 200, res);
+
+    // const token = user.signToken(user.id);
+    // res.status(200).json({
+    //   status: 'success',
+    //   message: 'The password successfully updated',
+    // });
   } catch (error) {
     next(error);
   }

@@ -1,3 +1,4 @@
+const crypto = require('crypto'); //build in node moudle , make us very simple bites random
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
@@ -15,6 +16,12 @@ const userSchema = new mongoose.Schema({
     //         an validaor for emails from the package of validator - check the package in npm for more validaor options
   },
   photo: String, //optional in our app
+  role: {
+    //for Authorization!
+    type: String,
+    enum: ['user', 'guide', 'lead-guide', 'admin'], //user roles that will be specific to apllication domain,
+    default: 'user',
+  },
   password: {
     type: String,
     required: [true, 'Please provide a password '],
@@ -34,6 +41,8 @@ const userSchema = new mongoose.Schema({
     },
   },
   passwordChangedAt: Date,
+  passwordRestToken: String,
+  passwordResetExpires: Date, //you have limited time to rest your password as security mesures
 });
 //middleware function that will be proccess between the moment that we recive the data , and proccesing to the db
 userSchema.pre('save', async function (next) {
@@ -53,6 +62,15 @@ userSchema.pre('save', async function (next) {
   this.passwordConfirm = undefined; // delete a field to not procceeded in the db
   //we need this password confirm onlt to the validation , to make sure the user not doing a mistake while setting a password
   //we set the password in the schmema as required , but ut required only on the input not in the db
+  next();
+});
+
+//this function here going to run right before a new document is actualy saved, we could put it inside contorllers but we want it to happend automatically-happening behind the sence .
+userSchema.pre('save', function (next) {
+  //           the name of the proparty |this.isNew -> if the document is new
+  if (!this.isModified('password') || this.isNew) return next(); // if we dont modify the password proparty then not manipulate the passwordChangeAt!
+
+  this.passwordChangedAt = Date.now() - 1000; //put the passwordChangeAt one seconed in the past ->insure that the token is made after the password has been changed
   next();
 });
 
@@ -84,6 +102,28 @@ userSchema.methods.changedPasswordAfter = function (JWTTimeStamp) {
 
   //if passwordChangedAt is not exist then it means that the user hase never changed his password
   return false; //the user hase not changes his password after the token has benn isuued
+};
+
+// Generate the random token for forget password
+userSchema.methods.createPasswordResetToken = function () {
+  //                  (the num of charcters) | 'hex' => option in tostring method
+  const restToken = crypto.randomBytes(32).toString('hex'); //this token is what we are going to send to the user , it will be like a password that the user could use to create a real new password, only the user have access to this token so it realy behave like a password
+  //i this token behave like a password ,it means that hacker the have accesss to that token can actually reset the user passwoed itself meaning we dont want to have it stored anywhere without hashing it ,its incrypted!
+
+  // we want to save it inside the db to copmare it with the token that the user provide
+  // (we impelemnting that inside the modelschema above)
+  this.passwordRestToken = crypto
+    .createHash('sha256') // algoriton
+    .update(restToken) // verible where the token is stored
+    .digest('hex');
+  // "לְעַכֵּל"
+  //                             the incrypted one
+  console.log({ restToken }, this.passwordRestToken);
+  //                                      add a couple of seconeds
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; //modifiay the data
+
+  //returning the plane text token becouse tis is actually the one we are going to send to the email
+  return restToken;
 };
 
 //                      we want the model name- User , and created out of the schema that we just created
