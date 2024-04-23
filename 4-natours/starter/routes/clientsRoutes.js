@@ -18,6 +18,9 @@ router.patch(
   authController.updatePassword
 );
 
+router.patch('/updateMe', authController.protect, clientControllers.updateMe);
+router.delete('/deleteMe', authController.protect, clientControllers.deleteMe);
+
 ///api/v1/users
 router
   .route('/')

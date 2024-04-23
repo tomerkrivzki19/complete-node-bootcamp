@@ -21,6 +21,24 @@ const createSendToken = (user, statusCode, res) => {
   //                user ->  the user argument!
   const token = signToken(user._id);
 
+  //Send cookie
+  const cookieOptions = {
+    //             the day now  + the 90 we set on config.env -> covert it to miliseconeds
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ), //the broswer and the client cookie will delete itself after it expires
+
+    //  secure: true, //the cookie will be only send on encrypted connection - HTTPS
+    httpOnly: true, //the cookie cannot be access or modifyed in any way by the browser, the way the broswer act after we set that option is to recive the cookie store it and send it automaticlly along with every reqeuset
+  };
+
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  //the name of the cookie , the data we sending , options :
+  res.cookie('jwt', token, cookieOptions);
+
+  //Remove the password from the output
+  user.password = undefined;
+
   res.status(statusCode).json({
     status: 'success',
     token,
@@ -41,6 +59,7 @@ exports.singup = async (req, res, next) => {
       password: req.body.password,
       passwordConfirm: req.body.passwordConfirm,
       passwordChangedAt: req.body.passwordChangedAt, //FOT THE OPTION OF CHEKING
+      role: req.body.role,
     });
     createSendToken(newUser, 201, res);
 
@@ -310,7 +329,6 @@ exports.updatePassword = async (req, res, next) => {
     //                               .select => when we finding the user by it own id we want also to bring his password on the result
     const user = await User.findById(req.user.id).select('+password'); // we find by the req id becouse in this endpoint the user is already log in , and in the end points beloow  we defind that the user data is proccess threw the req
     //2) Check if POSTed  current password is correct
-    console.log('user', user);
     //  const passwordCheck =   user.currectPassword(req.body.passwordConfirm, user.password);
     if (
       !(await user.currectPassword(req.body.passwordCurrent, user.password))

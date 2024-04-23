@@ -43,6 +43,12 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordRestToken: String,
   passwordResetExpires: Date, //you have limited time to rest your password as security mesures
+  active: {
+    //
+    type: Boolean,
+    default: true, //by defult -> any user that is new is an active user
+    select: false, // we dont want to display it in the output , we dont want to show this active flag
+  },
 });
 //middleware function that will be proccess between the moment that we recive the data , and proccesing to the db
 userSchema.pre('save', async function (next) {
@@ -74,6 +80,16 @@ userSchema.pre('save', function (next) {
   next();
 });
 
+//QUERY MIDDLEWARE | /^ / => meaning , find every thing that starts with find, we implement that becouse we need to query also for update and more , so the solution to that is to make this sing , to query all that starts with find
+
+userSchema.pre(/^find/, function (next) {
+  // this function need to hide from the user all the users that have active set to false
+  // this points to the current query
+  //               $ne - not equal!
+  this.find({ active: { $ne: false } }); // we want to query all the documnets that have active set to true.
+  next();
+  // in this exmaple we shwoing a way of "deleting" documents,  we dont delete them copletly we just hide them in the output ! , meaning they no longer active
+});
 //check if the password is match  - bycrypt
 //-here we creating a methood that will be aviable on all documents of a surten collection
 //              the name of the funciton
@@ -118,7 +134,7 @@ userSchema.methods.createPasswordResetToken = function () {
     .digest('hex');
   // "לְעַכֵּל"
   //                             the incrypted one
-  console.log({ restToken }, this.passwordRestToken);
+  // console.log({ restToken }, this.passwordRestToken);
   //                                      add a couple of seconeds
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; //modifiay the data
 
