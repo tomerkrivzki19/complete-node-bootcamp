@@ -12,7 +12,7 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/clientsRoutes');
-
+const reviewRouter = require('./routes/reviewRoutes');
 // Global middaleeares:
 //set Security HTTP headers
 app.use(helmet()); // need to put in the begining becouse this will secure hour headers
@@ -78,7 +78,7 @@ app.use(express.static('./public'));
 //Test middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
-  console.log(req.headers); //access to the req headers
+  // console.log(req.headers); //access to the req headers
   next();
 });
 
@@ -109,6 +109,7 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 app.all('*', (req, res, next) => {
   //handle all the urls for untyped correctly urls -- err handaling for mispale paths in node.js

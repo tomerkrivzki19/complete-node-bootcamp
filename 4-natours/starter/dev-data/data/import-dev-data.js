@@ -4,15 +4,27 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Tour = require('../../models/tourModel');
+const Review = require('../../models/reviewModel');
+const User = require('../../models/userModel');
 
-// const config = require('../../config.env');
+// const configFile = require('../../config.env');
+
 dotenv.config({ path: '../../config.env' });
+
+// After loading environment variables
+// console.log('DATABASE:', process.env.DATABASE);
+
+// Check if the DATABASE variable is defined
+if (!process.env.DATABASE) {
+  console.error('DATABASE environment variable is not set.');
+  process.exit(1); // Exit the script with an error code
+}
 
 const DB = process.env.DATABASE.replace(
   '<PASSWORD>',
   process.env.DATABASE_PASSWORD
 );
-
+// const DB = process.env.DATABASE;
 mongoose
   .connect(DB, {
     useNewUrlParser: true,
@@ -32,13 +44,18 @@ mongoose
 // Tour.collection.dropIndex({ rating: 1 });
 
 //   READ JSON FILE
-
-const tours = JSON.parse(fs.readFileSync('./tours-simple.json', 'utf-8'));
+// const path = require('path');
+// const toursFilePath = path.join(__dirname, 'tours.json');
+const tours = JSON.parse(fs.readFileSync('./tours.json', 'utf-8'));
+const users = JSON.parse(fs.readFileSync('./users.json', 'utf-8'));
+const reviews = JSON.parse(fs.readFileSync('./reviews.json', 'utf-8'));
 
 //IMPORT DATA INTO DB
 const importData = async () => {
   try {
-    await Tour.create(tours);
+    await Tour.create(tours); //Big note ! -> we need to turn off the incryptede password option in the midel becouse inside the json files (json files with api data ) , there is already incrypted data
+    await User.create(users, { validateBeforeSave: false }); //validateBeforeSave: false  --> becouse of the mongoose password conform err code when deploing this option should overright this problem, this means the all the validation we do in the model will be slkipped
+    await Review.create(reviews);
     console.log('data succesfuly loaded!');
   } catch (error) {
     console.log(error);
@@ -51,6 +68,8 @@ const importData = async () => {
 const deleteData = async () => {
   try {
     await Tour.deleteMany(); //deleteMany => pass nothing and it will delete all document in the collection
+    await Review.deleteMany();
+    await User.deleteMany();
     console.log('data succesfuly deleted!');
   } catch (error) {
     console.log('Error deleting data:', error);

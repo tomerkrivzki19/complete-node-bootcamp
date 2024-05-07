@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const factory = require('../controllers/handlerFactory');
 
 //                       rest paramters for the allowed fields -. will create an array with all the elemnts we passed in
 const filterObj = (obj, ...allowedFields) => {
@@ -15,21 +16,32 @@ const filterObj = (obj, ...allowedFields) => {
   return newObj;
 };
 
-exports.getAllClients = async (req, res) => {
-  try {
-    const Users = await User.find();
-
-    res.status(200).json({
-      status: 'success',
-      results: Users.length,
-      data: {
-        Users,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+//A middleware function to overwrite the fet user from the params method , but instead just ytake the user id from the req when she simply loged-in
+exports.getMe = (req, res, next) => {
+  //we want to get the current id that coming from the log in user -- to implement that we are creating a simple middlewareS
+  // this way we do not need to this end point the user id from the end poind(PARAMS ):
+  req.params.id = req.user.id;
+  next();
 };
+
+// exports.getAllClients = async (req, res) => {
+//   try {
+//     const Users = await User.find();
+
+//     res.status(200).json({
+//       status: 'success',
+//       results: Users.length,
+//       data: {
+//         Users,
+//       },
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+exports.getAllClients = factory.getAll(User);
+
 //updating the user data
 exports.updateMe = async (req, res, next) => {
   try {
@@ -84,8 +96,8 @@ exports.updateMe = async (req, res, next) => {
 
 exports.createClient = (req, res) => {
   res.status(500).json({
-    status: 'faild',
-    message: 'something went wrong',
+    status: 'error',
+    message: 'This route is not defined! Please use /singup instead',
   });
 };
 
@@ -98,21 +110,15 @@ exports.deleteMe = async (req, res, next) => {
     message: null,
   });
 };
-exports.getClient = (req, res) => {
-  res.status(500).json({
-    status: 'faild',
-    message: 'something went wrong',
-  });
-};
-exports.updateClient = (req, res) => {
-  res.status(500).json({
-    status: 'faild',
-    message: 'something went wrong',
-  });
-};
-exports.deleteUser = (req, res) => {
-  res.status(500).json({
-    status: 'faild',
-    message: 'something went wrong',
-  });
-};
+
+// exports.getClient = (req, res) => {
+//   res.status(500).json({
+//     status: 'faild',
+//     message: 'something went wrong',
+//   });
+// };
+exports.getClient = factory.getOne(User);
+
+//Do NOT update password with this!
+exports.updateClient = factory.updateOne(User);
+exports.deleteUser = factory.deleteOne(User);
