@@ -52,6 +52,15 @@ router
     tourControllers.getMonthlyPlan
   );
 
+//to get the tours that near the client options
+router.route('/distances/:latlng/unit/:unit').get(tourControllers.getDistances);
+
+router
+  .route('/tours-within/:distance/center/:latlng/unit/:unit')
+  .get(tourControllers.getTourWithin);
+// /tours-within?distance=233&center=-40,45,unit=mi    | mi => miiles : km => killometers
+// /tours-within/233/center/-40,45/unit/mi ---- > we pick that one becouse its looks more cleaner
+
 // api/v1/tours'
 router
   .route('/')

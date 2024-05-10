@@ -41,11 +41,16 @@ const reviewSchema = new mongoose.Schema(
     toObject: { virtuals: true }, // same but for objects to
   }
 );
+
+//we need to make sure that we oreventing users to multiply reviews on the same tour - preventing duplicate reviews , for that we need to create an index query with the option if unique way
+//each cmbination of tour and user allways must be unique
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true }); //may work several days after
+
 //all find methods that have find method
 reviewSchema.pre(/^find/, function (next) {
   this.populate({
     path: 'user', //we removed the tour option becouse of duplicate data!
-    select: 'name photo ',
+    select: 'name photo',
   });
   next();
 });

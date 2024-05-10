@@ -453,3 +453,94 @@ exports.getMonthlyPlan = async (req, res) => {
     });
   }
 };
+
+exports.getTourWithin = async (req, res, next) => {
+  //'/tours-within/:distance/center/:latlng/unit/:unit', --> the param we set in the router
+  // /tours-within/233/center/34.139470,-118.717908/unit/mi --> we eccept the data like that
+  //TODO:         radius     latitude  longitude    => lat lng (the two paramters from the coordinates)
+  //                           קו אורך      קו אורך
+
+  try {
+    const { distance, latlng, unit } = req.params;
+    const [lat, lng] = latlng.split(',');
+    const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1; //we need to convert it to special unit of radious | 'mi'-> miiles
+    //                     distance of milles(radius) |   distance of km (radius)
+    //need to check if there a latidute and longtidue in the url path
+    if (!lat || !lng) {
+      next(
+        new AppError(
+          'Please provide latitude and longitude in the format lat,lng.',
+          400
+        )
+      );
+    }
+
+    console.log(distance, lat, lng, unit);
+
+    //in this exmaple we want to query by start location in the db
+    //find document within a sorten ge-ometry,  centerShpere ->  takes in an array of corodiants and of the radius
+    const tours = await Tour.find({
+      //here we need first to canculate(displat the beeter word) the longitude and then the latitude becouse that is how the cordinates pairs is working in this  centerSphere  operator
+      startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
+    });
+
+    res.status(200).json({
+      status: 'success',
+      results: tours.length,
+      data: {
+        data: tours,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getDistances = async (req, res, next) => {
+  try {
+    const { latlng, unit } = req.params;
+    const [lat, lng] = latlng.split(',');
+    //                        a multiplier for milles |a multiplier for kilometers
+    const multiplier = unit === 'mi' ? 0.000621371192 : 0.001; //a verible  with turnery oerator that will be our multilayer in the aggrerate pipe line
+    if (!lat || !lng) {
+      next(
+        new AppError(
+          'Please provide latitude and longitude in the format lat,lng.',
+          400
+        )
+      );
+    }
+
+    //                      aggregation pipe line
+    const distances = await Tour.aggregate([
+      {
+        $geoNear: {
+          //geoNear -> the only aggregate pipe line stage that exist --  always need to be the first one in the line | requires one of our fields contain a gero-special index
+          near: {
+            //the point to which to canculate the distances
+            type: 'Point',
+            coordinates: [lng * 1, lat * 1], // convert it to numbers -
+          },
+          distanceField: 'distance', //this is the name of the  field that will be created and where all the canculated distances will be sored
+          distanceMultiplier: multiplier, //here we are specify a number that then is going to be multipled with all the distances
+        },
+      },
+      {
+        $project: {
+          //to focus on the distance it self in this exmaple --> in this options we just choose what to project(display in the output):
+          distance: 1, //want to keep it
+          name: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        data: distances,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

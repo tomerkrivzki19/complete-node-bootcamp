@@ -41,6 +41,7 @@ const tourSchema = new mongoose.Schema(
       unique: false,
       min: [1, 'Rating must be above 1.0'],
       max: [5, 'Rating must be below 5.0'],
+      set: (val) => Math.round(val * 10) / 10, //set function -> this function will run each time when a value is set to this field () ||TODO:  (val *10 )/ 10 ine the callback funciton -> 4.66666 => (val *10) / 10 = 4.7
     },
     ratingsQuantity: {
       type: Number,
@@ -136,7 +137,7 @@ const tourSchema = new mongoose.Schema(
 //tourSchema.index({ price: 1 }); //after this operation we can see in the executionStats options , the totalDocsExamined  was 3 . instead of 9 (written all the documents ), this stuff ( indexes )is good for better prtformence . making the mongoose engine mutch faster!
 tourSchema.index({ price: 1, ratingsAverage: -1 });
 tourSchema.index({ slug: 1 });
-
+tourSchema.index({ startLocation: '2dsphere' }); //diffrent index we need -- 2dsphere earh fere?  -- this index if ment to the getTourWithin radius function
 //how to we decide which fields should contain index and why we dont set indexes on all the fields?
 // answer:
 //* we need to carfully studie the access paderen of our application in order to figure out whitch fiels are query the most then set the indexes for this fiedlds, exampe i dont make a fields to a group size- becouse i dont belive that many people should query that pormater
@@ -242,12 +243,12 @@ tourSchema.post(/^find/, function (docs, next) {
 
 //צבירה
 //AGGERATION MIDDLEWARE -- aloow us to add hooks before and after the aggreation happens
-tourSchema.pre('aggregate', function (next) {
-  // unshift() -> add a elemnt in a biggining of an array
-  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } }); //removing from the output all the elements that have secret tour set to true
-  console.log(this.pipeline());
-  next();
-});
+// tourSchema.pre('aggregate', function (next) {
+//   // unshift() -> add a elemnt in a biggining of an array
+//   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } }); //removing from the output all the elements that have secret tour set to true
+//   console.log(this.pipeline());
+//   next();
+// });
 
 //data validation - cheking if the enterd values are in the right format for each field ot a document scehma and also that the vlaues hade actually been entered for all of the required fields
 //we also have senitation -- it so insure that the inputed data is basiclly clean - remove unwonted data and remove them secure data!
