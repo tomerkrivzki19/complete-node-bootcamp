@@ -1,3 +1,4 @@
+const path = require('path'); //a path node module is a package from node that helping us to manipulate paths in node
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
@@ -6,16 +7,55 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 
-const app = express();
-
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/clientsRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
+const viewRouter = require('./routes/viewRoutes');
+
+const app = express();
+//pug --> a tamplate engin for express
+//tell express what tamplate engin we are going to use:
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
+// console.log(path.join(__dirname, 'views'));
+
 // Global middaleeares:
+//Serving static files
+// app.use(express.static('./public'));
+app.use(express.static(path.join(__dirname, 'public')));
+// app.use((req, res, next) => { // exampe of middaleware
+//   console.log('Hello from the middleware function 👋');
+//   next();
+// });
+
 //set Security HTTP headers
-app.use(helmet()); // need to put in the begining becouse this will secure hour headers
+// Further HELMET configuration for Security Policy (CSP) --> for the leaflet package instead of mapbox 
+const scriptSrcUrls = ['https://unpkg.com/', 'https://tile.openstreetmap.org'];
+const styleSrcUrls = [
+  'https://unpkg.com/',
+  'https://tile.openstreetmap.org',
+  'https://fonts.googleapis.com/'
+];
+const connectSrcUrls = ['https://unpkg.com', 'https://tile.openstreetmap.org'];
+const fontSrcUrls = ['fonts.googleapis.com', 'fonts.gstatic.com'];
+
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: [],
+    connectSrc: ["'self'", ...connectSrcUrls],
+    scriptSrc: ["'self'", ...scriptSrcUrls],
+    styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+    workerSrc: ["'self'", 'blob:'],
+    objectSrc: [],
+    imgSrc: ["'self'", 'blob:', 'data:', 'https:'],
+    fontSrc: ["'self'", ...fontSrcUrls]
+  }
+})
+);
+
+ // need to put in the begining becouse this will secure our headers
 
 //Development log-in
 if (process.env.NODE_ENV === 'development') {
@@ -68,13 +108,6 @@ app.use(
   })
 ); // to prevent
 
-//Serving static files
-app.use(express.static('./public'));
-// app.use((req, res, next) => { // exampe of middaleware
-//   console.log('Hello from the middleware function 👋');
-//   next();
-// });
-
 //Test middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
@@ -104,9 +137,10 @@ app.use((req, res, next) => {
 // app.patch('/api/v1/tours/:id', updateTour);
 // app.delete('/api/v1/tours/:id', deleteTour);
 
-// ROUTES
-// a shorter way to make the code look more arragend
+//3)d ROUTES
 
+// a shorter way to make the code look more arragend
+app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
