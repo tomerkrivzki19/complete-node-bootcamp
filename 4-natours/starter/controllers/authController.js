@@ -122,6 +122,10 @@ exports.protect = async (req, res, next) => {
     ) {
       //now we need to split between the Bearer and the actual tooken in order to get access to the actual token that has been sent to us from the req.headers
       token = req.headers.authorization.split(' ')[1]; //we want the seconed element from the array
+    } else if (req.cookies.jwt) {
+      //read the json web token form a cookie
+      token = req.cookies.jwt;
+      //authenticate users also by the cookie not only by the authorizaation req header
     }
 
     // console.log(token);
@@ -179,6 +183,41 @@ exports.protect = async (req, res, next) => {
     //GRAND ACCESS TO PROTECTED ROUTE
     // put the intire user data on the req:
     req.user = currentUser; // we puting inside req.user the new user data!, that way the data will be avaible in next middleware function , this req bject travels from middleware to middleware
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+//Only for renderd pages, no errors!
+exports.isLoggedIn = async (req, res, next) => {
+  try {
+    if (req.cookies.jwt) {
+      //1)verify the token
+      const decoded = await promisify(jwt.verify)(
+        //promisify-> a build in function in node libary -> make it return promise.
+        req.cookies.jwt,
+        process.env.JWT_SECRET
+      );
+
+      //2)Check if the user still exists
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) {
+        return next();
+      }
+
+      //3) Check if user changed password after the token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat)) {
+        return next();
+      }
+
+      // THERE IS A LOGGED IN USER
+      //we can get access to response.locals and set there any verible we want and from there our pug tamplates will get access to them ,
+      //in req.locals.user there will be an tampalte there will be a verible called user => each an every pug tamplate will get access to response.locals.user
+      //passing data to a tamplate using a render function
+      res.locals.user = currentUser;
+      return next();
+    }
     next();
   } catch (error) {
     next(error);

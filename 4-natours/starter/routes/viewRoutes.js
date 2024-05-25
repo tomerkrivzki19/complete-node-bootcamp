@@ -1,7 +1,7 @@
 const express = require('express');
 const viewController = require('../controllers/viewController');
 const router = express.Router();
-
+const authController = require('../controllers/authController');
 //TESTING :
 
 // router.get('/', (req, res) => {
@@ -16,11 +16,11 @@ const router = express.Router();
 //   });
 // });
 
+router.use(authController.isLoggedIn);
+
 router.get('/', viewController.getOverview);
-
 router.get('/tour/:slug', viewController.getTour);
-
-// create a /login route => controller => tamplate - (the tamplate located at the tamplate folder named login tamplate )
-router.get('/login',viewController.getLoginForm)
+// mission: create a /login route => controller => tamplate - (the tamplate located at the tamplate folder named login tamplate )
+router.get('/login', viewController.getLoginForm);
 
 module.exports = router;

@@ -1,30 +1,26 @@
-import axios from 'axios'
-// problems with axios ---FIX --> lecture number: 189 , 11:33
+import axios from 'axios';
+import { showAlert } from './alerts';
 
-const login = async(email,password)=>{
-    console.log(email,password);
-    try {
-        //  axios => call api instead of resolve reject promisess | we imported the axios package as cdn in the base scripts
-        //resolve -> !(not) response 
-        const res =  await axios({
-            methods: 'POST',
-            url: 'http://192.168.68.108:8000/api/v1/users/login',
-            data: {
-                email,
-                password
-            }
-        })
-        console.log(res);
-    } catch (error) {
-        console.log(error);
+export const login = async (email, password) => {
+  try {
+    console.log(email, password);
+    // axios => call api instead of resolve reject promisess | we imported the axios package as cdn in the base scripts
+    //resolve -> !(not) response
+    const res = await axios.post('http://127.0.0.1:8000/api/v1/users/login', {
+      email,
+      password,
+    });
+    //the data that we send as json response
+    //'success' => when we sending the response we are using success to describe our res, so this is why we chose this here ( where it comes from )
+    if (res.data.status === 'success') {
+      showAlert('success', 'Logged in successfully!');
+
+      //send to homepage
+      window.setTimeout(() => {
+        location.assign('/');
+      }, 1500);
     }
-}
-
-
-document.querySelector('.form').addEventListener('submit',e =>{
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    login(email,password);
-    
-})
+  } catch (error) {
+    showAlert('error', error.response.data.message);
+  }
+};

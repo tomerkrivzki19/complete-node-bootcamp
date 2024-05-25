@@ -6,6 +6,7 @@ const helmet = require('helmet'); // for securing https headers
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cookieParer = require('cookie-parser');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
@@ -25,6 +26,7 @@ app.set('views', path.join(__dirname, 'views'));
 //Serving static files
 // app.use(express.static('./public'));
 app.use(express.static(path.join(__dirname, 'public')));
+
 // app.use((req, res, next) => { // exampe of middaleware
 //   console.log('Hello from the middleware function 👋');
 //   next();
@@ -78,6 +80,8 @@ app.use('/api', limiter);
 
 //Body parser, reading data from the body into req.body
 app.use(express.json({ limit: '10kb' })); //here we set the limit for parsering files to max of 10 kb , what will happeend id there are a file more then 10 kb , simpily he will not be accepted
+//cookie-parser => an middleware that parse us all the cookies that come form the request 
+app.use(cookieParer())
 
 //Data sanitization against NoSQL query injection
 // A HACKER METHOD - FIXME:CRAZY - login without knew the email
@@ -93,9 +97,9 @@ app.use(mongoSanitize()); // this is a function that we call that them will retu
 //Data sanitization against XSS
 app.use(xss()); //clean any user input from malicious html code . prevent attacker to put inside inputs some html code that could hack the system, by this middleware we preventing that by converting all the html simbels
 
-//Prevent paramater pollution - clear up the duplicate query string , for example if we have on the url : ?sort=duration&sort=price ==> this will give us an array of two paramters of sort and fisplay eventually an err, this package is preventing that to happen by sorting the last one that has been typed
+//Prevent paramater pollution - clear up the duplicate query string , for example if we have on the url : ?sort=duration&sort=price ==> this will give us an array of two paramters of sort and display eventually an err, this package is preventing that to happen by sorting the last one that has been typed
 app.use(
-  //there are some proparties that we actuallt want the duplicate to work , like duration : we want to query proprates wiht duration 5 and 10 for exmaple , so to activate that we can use inside the options the whitelist option, and there get acces to those stuff
+  //there are some proparties that we actually want the duplicate to work , like duration : we want to query proprates wiht duration 5 and 10 for exmaple , so to activate that we can use inside the options the whitelist option, and there get acces to those stuff
   hpp({
     whitelist: [
       'duration',
@@ -111,6 +115,7 @@ app.use(
 //Test middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
+  console.log(req.cookies);
   // console.log(req.headers); //access to the req headers
   next();
 });
@@ -169,5 +174,5 @@ app.all('*', (req, res, next) => {
 app.use(globalErrorHandler);
 
 //START THE SERVER
-
+// (inside the server js file)
 module.exports = app;

@@ -43,7 +43,10 @@ exports.getTour = async (req, res, next) => {
 // login
 exports.getLoginForm = async(req,res,next)=>{
   try {
-    res.status(200).render('login',{
+    res.status(200).set(
+      'Content-Security-Policy',
+      "connect-src 'self' https://cdnjs.cloudflare.com"
+    ).render('login',{
       title:'Log into you acoount'
     })
   } catch (error) {
