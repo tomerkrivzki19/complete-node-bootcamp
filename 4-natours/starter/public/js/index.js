@@ -4,15 +4,17 @@
 // bable libary => make some of the new js fetures work at older broswers
 //npm i @babel/polyfill
 import '@babel/polyfill';
+import { login, logout } from './login';
 import { displayMap } from './mapbox';
-import { login } from './login';
 
 // console.log('Hello from parcel'); -> check if the fille work
+
+// FIXEME: having problem with the mapbox when entering to a tour
 
 //DOM ELEMNTS :
 const mapbox = document.getElementById('map');
 const loginForm = document.querySelector('.form');
-
+const logOutBtn = document.querySelector('.nav__el--logout');
 //DELEGATION:
 if (mapbox) {
   //extract the data from the div , what we have done in the pug tamplate - we display all the data in the div classname
@@ -30,3 +32,5 @@ if (loginForm) {
 } else {
   console.error('Form element not found');
 }
+
+if (logOutBtn) logOutBtn.addEventListener('click', logout);

@@ -31,36 +31,70 @@ const handaleJWTError = () =>
 const handaleJWTExpiredError = () =>
   new AppError('Your token has expired! please log in again.', 401);
 
-const sendErrorDev = (err, res) => {
-  return res.status(err.statusCode).json({
-    status: err.status,
-    error: err,
-    message: err.message,
-    stack: err.stack,
+const sendErrorDev = (err, req, res) => {
+  //we want to check if the route have an api in it
+  //originalUrl => the original utl without the host => will display only the route
+  //A) API
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(err.statusCode).json({
+      status: err.status,
+      error: err,
+      message: err.message,
+      stack: err.stack,
+    });
+  }
+
+  //B) RENDERED WEBSITE
+  console.log('ERROR 💣', err);
+  return res.status(err.statusCode).render('error', {
+    //the data we want to send to the pug tamplate
+    title: 'somthing went wrong!',
+    msg: err.message,
   });
 };
 
-const sendErrorProd = (err, res) => {
-  //Operational,trusted error : send message to the client
-  if (err.isOperational) {
-    // err.isOperational -> the proparty that we set to true inside of the error class that we created
-    return res.status(err.statusCode).json({
-      status: err.status,
-      message: err.message,
-    });
-
-    //Programing or other unknown error: don't leak error details
-    //  ---------------------------------------------------------
-  } else {
+const sendErrorProd = (err, req, res) => {
+  // A) API
+  if (req.originalUrl.startsWith('/api')) {
+    //A) Operational,trusted error : send message to the client
+    if (err.isOperational) {
+      // err.isOperational -> the proparty that we set to true inside of the error class that we created
+      return res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message,
+      });
+    }
+    // B) Programing or other unknown error: don't leak error details
     //1)Log error
     console.log('ERROR 💣', err);
-
     // 2)Send generic message
     return res.status(500).json({
       status: 'error',
       message: 'something went very wrong',
     });
   }
+
+  // B) RENDERED WEBITE
+  //A) Operational,trusted error : send message to the client
+  if (err.isOperational) {
+    console.log(err);
+    // err.isOperational -> the proparty that we set to true inside of the error class that we created
+    return res.status(err.statusCode).render('error', {
+      //the data we want to send to the pug tamplate
+      title: 'Something went wrong!',
+      msg: err.message,
+    });
+  }
+
+  //B) Programing or other unknown error: don't leak error details
+  //1)Log error
+  console.log('ERROR 💣', err);
+  // 2)Send generic message
+  return res.status(err.statusCode).render('error', {
+    //the data we want to send to the pug tamplate
+    title: 'Something went wrong!',
+    msg: 'Please try again later.',
+  });
 };
 
 module.exports = (err, req, res, next) => {
@@ -75,9 +109,11 @@ module.exports = (err, req, res, next) => {
   //we sending the same error responses to everyone , the idea in production we want to leak as little information as possible of our error to our clients with nice human messages,
   //in the other hand in on development we want to get as mutch inforamtion as possible, we could print it in the conslole , but we could also send the err deatils to postman
   if (process.env.NODE_ENV === 'development') {
-    sendErrorDev(err, res);
+    sendErrorDev(err, req, res);
   } else if (process.env.NODE_ENV === 'production') {
     let error = { ...err };
+    //a quick fix for the err not displaying us the error message
+    error.message = err.message;
     //the error.name dont work becouse in some reason the err that passed to error veribale do not geting the name verible from the error!
     if (err.name === 'CastError') error = handleCastErrorDB(error);
     //if(message.name === 'CastError') --> this is the err that the client geting in some cases , we got the path to the error from postman by simply wroting wrong / false details
@@ -93,6 +129,9 @@ module.exports = (err, req, res, next) => {
     //so in this case what we are doing is to compare the "code": 11000,message from the error it-self
     if (err.code === 11000) error = handleDuplicateFieldsDB(error);
 
-    sendErrorProd(error, res);
+    //chking why the err does not have a message:
+    // console.log(err.message);
+    // console.log(error.message);
+    sendErrorProd(error, req, res);
   }
 };

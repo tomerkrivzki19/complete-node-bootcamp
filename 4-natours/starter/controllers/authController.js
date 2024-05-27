@@ -110,6 +110,22 @@ exports.login = async (req, res, next) => {
   }
 };
 
+//if we want to keep using the super secure way of storing cookies, so how we could be abale to log out users on our website?
+//  becouse usually with jwt authentication we just delete the cookie or the token form the local storage, but its not possible when we using this way ( httpOnly:true in the cookie options --> secure way of working with cookies )
+// what we are going to do insted is to create a very simple logout route that will simply send back the new cookie with the exact same name but with out the token and that will overwrite the new cookie that we got in the browser with one that have the same name but not token
+// and so that when the cookie send with the next request , then we will not be abale to identify the user as beaing log in => what will log him out + adding some experation time to cookie to make it disapere
+exports.logout = (req, res, next) => {
+  try {
+    res.cookie('jwt', 'loggedout', {
+      //the day now + 10 sec -> this will expired after the function have operated , menaning that it will remove the cookie completely after 10 sec
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+    });
+    res.status(200).json({ status: 'success' });
+  } catch (error) {
+    next(error);
+  }
+};
 //a middleware function that will check if the token valid and protect the routes that we selceted
 exports.protect = async (req, res, next) => {
   try {
@@ -183,6 +199,7 @@ exports.protect = async (req, res, next) => {
     //GRAND ACCESS TO PROTECTED ROUTE
     // put the intire user data on the req:
     req.user = currentUser; // we puting inside req.user the new user data!, that way the data will be avaible in next middleware function , this req bject travels from middleware to middleware
+    res.locals.user = currentUser; //we puting both current user inside req.user and res.locals.user , so we can automaticly use that on all tamplates when we want
     next();
   } catch (error) {
     next(error);
@@ -191,8 +208,8 @@ exports.protect = async (req, res, next) => {
 
 //Only for renderd pages, no errors!
 exports.isLoggedIn = async (req, res, next) => {
-  try {
-    if (req.cookies.jwt) {
+  if (req.cookies.jwt) {
+    try {
       //1)verify the token
       const decoded = await promisify(jwt.verify)(
         //promisify-> a build in function in node libary -> make it return promise.
@@ -217,11 +234,13 @@ exports.isLoggedIn = async (req, res, next) => {
       //passing data to a tamplate using a render function
       res.locals.user = currentUser;
       return next();
+
+      //NO looged in user
+    } catch (error) {
+      return next();
     }
-    next();
-  } catch (error) {
-    next(error);
   }
+  next();
 };
 
 // Authorization

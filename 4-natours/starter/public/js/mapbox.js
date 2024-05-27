@@ -15,7 +15,7 @@ export const displayMap = (location) => {
 
   //a distract of all the cordinates to the map package usinng foreach + settings for the display and output
   const points = [];
-  locations.forEach((loc) => {
+  location.forEach((loc) => {
     points.push([loc.coordinates[1], loc.coordinates[0]]);
     L.marker([loc.coordinates[1], loc.coordinates[0]])
       .addTo(map)

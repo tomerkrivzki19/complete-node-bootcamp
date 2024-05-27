@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post('/singup', authController.singup);
 router.post('/login', authController.login);
+router.get('/logout', authController.logout);
 //user friendly forget password functionality
 router.post('/forgotPassword', authController.forgotPassword);
 router.patch('/resetPassword/:token', authController.resetPassword);

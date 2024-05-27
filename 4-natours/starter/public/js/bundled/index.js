@@ -148,12 +148,14 @@
 // bable libary => make some of the new js fetures work at older broswers
 //npm i @babel/polyfill
 var _polyfill = require("@babel/polyfill");
-var _mapbox = require("./mapbox");
 var _login = require("./login");
+var _mapbox = require("./mapbox");
 // console.log('Hello from parcel'); -> check if the fille work
+// FIXEME: having problem with the mapbox when entering to a tour
 //DOM ELEMNTS :
 const mapbox = document.getElementById("map");
 const loginForm = document.querySelector(".form");
+const logOutBtn = document.querySelector(".nav__el--logout");
 //DELEGATION:
 if (mapbox) {
     //extract the data from the div , what we have done in the pug tamplate - we display all the data in the div classname
@@ -167,6 +169,7 @@ if (loginForm) loginForm.addEventListener("submit", (e)=>{
     (0, _login.login)(email, password);
 });
 else console.error("Form element not found");
+if (logOutBtn) logOutBtn.addEventListener("click", (0, _login.logout));
 
 },{"@babel/polyfill":"dTCHC","./mapbox":"3zDlz","./login":"7yHem"}],"dTCHC":[function(require,module,exports) {
 "use strict";
@@ -7170,7 +7173,7 @@ const displayMap = (location)=>{
     }).addTo(map);
     //a distract of all the cordinates to the map package usinng foreach + settings for the display and output
     const points = [];
-    locations.forEach((loc)=>{
+    location.forEach((loc)=>{
         points.push([
             loc.coordinates[1],
             loc.coordinates[0]
@@ -7221,6 +7224,7 @@ exports.export = function(dest, destName, get) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "login", ()=>login);
+parcelHelpers.export(exports, "logout", ()=>logout);
 var _axios = require("axios");
 var _axiosDefault = parcelHelpers.interopDefault(_axios);
 var _alerts = require("./alerts");
@@ -7244,6 +7248,15 @@ const login = async (email, password)=>{
         }
     } catch (error) {
         (0, _alerts.showAlert)("error", error.response.data.message);
+    }
+};
+const logout = async ()=>{
+    try {
+        const res = await (0, _axiosDefault.default).get("http://127.0.0.1:8000/api/v1/users/logout");
+        // location.reload() => will reload the page |  location.reload(true) => will force a reload the server and not from the broswer
+        if (res.data.status === "success") location.reload(true);
+    } catch (error) {
+        (0, _alerts.showAlert)("error", "Error logging out! Try again .");
     }
 };
 

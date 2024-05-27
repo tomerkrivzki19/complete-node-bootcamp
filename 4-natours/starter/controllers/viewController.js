@@ -1,4 +1,5 @@
 const Tour = require('../models/tourModel');
+const AppError = require('../utils/appError');
 
 exports.getOverview = async (req, res, next) => {
   try {
@@ -29,6 +30,9 @@ exports.getTour = async (req, res, next) => {
       fields: 'review rating user',
     });
 
+    if (!tour) {
+      return next(new AppError('There is no tour with that name.', 404));
+    }
     //2) Build tamplate(pug tamplate)
     //3) Render tamplate using the data from step 1
     res.status(200).render('tour', {
@@ -41,15 +45,25 @@ exports.getTour = async (req, res, next) => {
 };
 
 // login
-exports.getLoginForm = async(req,res,next)=>{
+exports.getLoginForm = async (req, res, next) => {
   try {
-    res.status(200).set(
-      'Content-Security-Policy',
-      "connect-src 'self' https://cdnjs.cloudflare.com"
-    ).render('login',{
-      title:'Log into you acoount'
-    })
+    res
+      .status(200)
+      .set(
+        'Content-Security-Policy',
+        "connect-src 'self' https://cdnjs.cloudflare.com"
+      )
+      .render('login', {
+        title: 'Log into you acoount',
+      });
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
+
+exports.getAccount = (req, res) => {
+  // to get the account page we need simpaly render  the tamplate , we dont need to qery becouse  it already done in the protect middleware
+  res.status(200).render('account', {
+    title: 'Your account',
+  });
+};

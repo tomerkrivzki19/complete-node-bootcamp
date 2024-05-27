@@ -24,3 +24,13 @@ export const login = async (email, password) => {
     showAlert('error', error.response.data.message);
   }
 };
+
+export const logout = async () => {
+  try {
+    const res = await axios.get('http://127.0.0.1:8000/api/v1/users/logout');
+    // location.reload() => will reload the page |  location.reload(true) => will force a reload the server and not from the broswer
+    if (res.data.status === 'success') location.reload(true);
+  } catch (error) {
+    showAlert('error', 'Error logging out! Try again .');
+  }
+};
