@@ -33,31 +33,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 // });
 
 //set Security HTTP headers
-// Further HELMET configuration for Security Policy (CSP) --> for the leaflet package instead of mapbox 
+// Further HELMET configuration for Security Policy (CSP) --> for the leaflet package instead of mapbox
 const scriptSrcUrls = ['https://unpkg.com/', 'https://tile.openstreetmap.org'];
 const styleSrcUrls = [
   'https://unpkg.com/',
   'https://tile.openstreetmap.org',
-  'https://fonts.googleapis.com/'
+  'https://fonts.googleapis.com/',
 ];
 const connectSrcUrls = ['https://unpkg.com', 'https://tile.openstreetmap.org'];
 const fontSrcUrls = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
-app.use(helmet.contentSecurityPolicy({
-  directives: {
-    defaultSrc: [],
-    connectSrc: ["'self'", ...connectSrcUrls],
-    scriptSrc: ["'self'", ...scriptSrcUrls],
-    styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
-    workerSrc: ["'self'", 'blob:'],
-    objectSrc: [],
-    imgSrc: ["'self'", 'blob:', 'data:', 'https:'],
-    fontSrc: ["'self'", ...fontSrcUrls]
-  }
-})
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: [],
+      connectSrc: ["'self'", ...connectSrcUrls],
+      scriptSrc: ["'self'", ...scriptSrcUrls],
+      styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+      workerSrc: ["'self'", 'blob:'],
+      objectSrc: [],
+      imgSrc: ["'self'", 'blob:', 'data:', 'https:'],
+      fontSrc: ["'self'", ...fontSrcUrls],
+    },
+  })
 );
 
- // need to put in the begining becouse this will secure our headers
+// need to put in the begining becouse this will secure our headers
 
 //Development log-in
 if (process.env.NODE_ENV === 'development') {
@@ -80,8 +81,15 @@ app.use('/api', limiter);
 
 //Body parser, reading data from the body into req.body
 app.use(express.json({ limit: '10kb' })); //here we set the limit for parsering files to max of 10 kb , what will happeend id there are a file more then 10 kb , simpily he will not be accepted
-//cookie-parser => an middleware that parse us all the cookies that come form the request 
-app.use(cookieParer())
+//an build express package that parse url encoded form, urlencoded is also called on the form way of sending data  is also called urlencoded - what is doing is to parse that type of urlencoded form!
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10kb',
+  })
+);
+//cookie-parser => an middleware that parse us all the cookies that come form the request
+app.use(cookieParer());
 
 //Data sanitization against NoSQL query injection
 // A HACKER METHOD - FIXME:CRAZY - login without knew the email

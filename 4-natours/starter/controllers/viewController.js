@@ -1,4 +1,5 @@
 const Tour = require('../models/tourModel');
+const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 
 exports.getOverview = async (req, res, next) => {
@@ -66,4 +67,32 @@ exports.getAccount = (req, res) => {
   res.status(200).render('account', {
     title: 'Your account',
   });
+};
+
+exports.updateUserData = async (req, res, next) => {
+  try {
+    //we get an empty fiile -> so to solve that we basiclly added some exprees package middleware that parse for us urlencoded data
+    // console.log('UPDATING', req.body);
+    //                        (we saved on the req the user data on other requests )
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        name: req.body.name,
+        email: req.body.email,
+      },
+      {
+        new: true, //updated document as a resukt ,
+        runValidators: true,
+      }
+    );
+    //what we want to do after we update the data , is to come back to the page (same page ) with the updated data
+    //to do that we basiclliy need to render the page again
+    res.status(200).render('account', {
+      title: 'Your account',
+      //need to pass the updated user:
+      user: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
