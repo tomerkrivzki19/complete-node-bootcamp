@@ -1,7 +1,46 @@
+const multer = require('multer'); // multer => is a middleware form npm package that is handling multi-part form data , upload filles from a form basiccly
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('../controllers/handlerFactory');
+
+// when we used the multer middle ware to upload file we saw that when the fille is uploaded and saved inside the /img/users folder , we saw that the fille name was long and not understandtable , there was not ending to the fille ( meaning it will not adenify as an img (no img,png etc..)) so to controll our filles that coming from the client we need todo this steps:
+// we need to create one multer storage and one multer filter, and after we defind thier options of creating a fille we going to use them and create a upload from there
+const multerStorage = multer.diskStorage({
+  //                     cb =>callback function
+  destination: (req, file, cb) => {
+    cb(null, 'public/img/users');
+  },
+  filename: (req, file, cb) => {
+    //          userID , Time stemp
+    //user-78769784641551-65656566264.jpeg
+    //exteract the time stemp from the file (we can see the options on req.file) => the (jpeg,png etc...)
+    const ext = file.mimetype.split('/')[1];
+    //caling the calback with no error and the file name
+    cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+  },
+});
+
+// multer filter:
+const multerfilter = (req, file, cb) => {
+  // test if the upload fille is an image , and if so pass true to the callback function and if its not we will pass a false to a callback function with an error
+  // we do not want to upload fille that its not images , so this is why the function stands for | if in out application we want to upload somthing les , we can make here an function taht will test those sort of filles
+  //mimetype => not matter what image file will be uploaded ,inside the  mimetype will allways start with iamge/
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Not an image! Please upload only images', 400), false);
+  }
+};
+
+// if we dont specify and options , its basiclly will stored inside the memory and not saved any where in the disk
+//  we can add  dest(destination) =>  the folder we want to save all the images, ( on this example we used a separate function for that ....)
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerfilter,
+});
+
+exports.uploadUserPhoto = upload.single('photo'); //upload.single('photo') => we created a multer package with the name of upload , and the upload is just desing to setup serveral settings where on this exmaple we only find the destination , then we use that upload to create a new middleware that we can add to the stack of the route that we want to use to upload the fille --> for that we use upload.single() , becouse we only have a single fille and in there we specify the name of the fiels its going to hold this fille -  after it hadlaed it will put it on the req as an object (req.file )
 
 //                       rest paramters for the allowed fields -. will create an array with all the elemnts we passed in
 const filterObj = (obj, ...allowedFields) => {
@@ -45,6 +84,8 @@ exports.getAllClients = factory.getAll(User);
 //updating the user data
 exports.updateMe = async (req, res, next) => {
   try {
+    console.log(req.file);
+    console.log(req.body);
     //1) Create an err if the user POSTs password data
     if (req.body.password || req.body.passwordConfirm) {
       return next(

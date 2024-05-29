@@ -23,7 +23,11 @@ router.use(authController.protect);
 //we doing patch becouse we manipulatiog the user document
 router.patch('/updateMyPassword', authController.updatePassword);
 router.get('/me', clientControllers.getMe, clientControllers.getClient);
-router.patch('/updateMe', clientControllers.updateMe);
+router.patch(
+  '/updateMe',
+  clientControllers.uploadUserPhoto,
+  clientControllers.updateMe
+);
 router.delete('/deleteMe', clientControllers.deleteMe);
 
 router.use(authController.restrictTo('admin'));
