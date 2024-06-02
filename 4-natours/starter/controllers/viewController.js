@@ -81,7 +81,7 @@ exports.updateUserData = async (req, res, next) => {
         email: req.body.email,
       },
       {
-        new: true, //updated document as a resukt ,
+        new: true, //updated document as a result ,
         runValidators: true,
       }
     );

@@ -389,20 +389,16 @@ exports.updatePassword = async (req, res, next) => {
     //2) Check if POSTed  current password is correct
     //  const passwordCheck =   user.currectPassword(req.body.passwordConfirm, user.password);
 
-    //# I ADDED .DATA TO THE REQUEST BECOUSE WHEN SENDING AN REQUEST FROM THE CLIENT SIDE THAT WILL BE STORED INSIDE AN OBJECT( extractingfrom the actuall object)
     if (
-      !(await user.currectPassword(
-        req.body.data.passwordCurrent,
-        user.password
-      ))
+      !(await user.currectPassword(req.body.passwordCurrent, user.password))
     ) {
       return next(
         new AppError('The current password that provided is wrnog!', 401)
       );
     }
     //3) If so , update the passsword
-    user.password = req.body.data.password; // seting the password inside the db , to the password that the user provided
-    user.passwordConfirm = req.body.data.passwordConfirm; //seting the passwordConfirm inside the db , to the passwordConfirm that the user provided
+    user.password = req.body.password; // seting the password inside the db , to the password that the user provided
+    user.passwordConfirm = req.body.passwordConfirm; //seting the passwordConfirm inside the db , to the passwordConfirm that the user provided
     await user.save(); //saving the proccess inside the DB
     //4) Log user in , send JWT
     //                      the id from the user , at the first line we found the user id , when we was serching for the user password

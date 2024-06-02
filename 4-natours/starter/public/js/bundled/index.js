@@ -173,14 +173,20 @@ if (loginForm) loginForm.addEventListener("submit", (e)=>{
 });
 else console.error("Form element not found");
 if (logOutBtn) logOutBtn.addEventListener("click", (0, _login.logout));
-if (updateUserForm) updateUserForm.addEventListener("submit", (e)=>{
+if (updateUserForm) //not sending nothing and recives nothing err
+updateUserForm.addEventListener("submit", (e)=>{
     e.preventDefault();
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    (0, _updateSettings.updateSettings)({
-        name,
-        email
-    }, "data");
+    // const name = document.getElementById('name').value;
+    // const email = document.getElementById('email').value;
+    // we change it becouse we want to use also the upload photo setting and that is inside that form
+    const form = new FormData(); //FormData - recreate multipart form data
+    form.append("name", document.getElementById("name").value);
+    form.append("email", document.getElementById("email").value);
+    form.append("photo", document.getElementById("photo").files[0]); //that comes as an array , in for that we need to collect only the first fille that is the image the user uploaded
+    console.log(document.getElementById("name").value);
+    console.log(document.getElementById("email").value);
+    console.log(document.getElementById("photo").files[0]);
+    (0, _updateSettings.updateSettings)(form, "data");
 });
 if (updateUserPasswordForm) updateUserPasswordForm.addEventListener("submit", async (e)=>{
     e.preventDefault();
@@ -193,10 +199,6 @@ if (updateUserPasswordForm) updateUserPasswordForm.addEventListener("submit", as
         password,
         passwordConfirm
     }, "password");
-    document.querySelector(".btn--save-password").textContent = "Save password";
-    document.getElementById("password-current").value = "";
-    document.getElementById("password").value = "";
-    document.getElementById("password-confirm").value = "";
 });
  //from the postman route that we have already build - to compare if the same detaills is simmilar
  // {
@@ -205,7 +207,7 @@ if (updateUserPasswordForm) updateUserPasswordForm.addEventListener("submit", as
  //   "passwordConfirm":"newpassword"
  // }
 
-},{"@babel/polyfill":"dTCHC","./mapbox":"3zDlz","./login":"7yHem","./updateSettings":"l3cGY"}],"dTCHC":[function(require,module,exports) {
+},{"@babel/polyfill":"dTCHC","./login":"7yHem","./mapbox":"3zDlz","./updateSettings":"l3cGY"}],"dTCHC":[function(require,module,exports) {
 "use strict";
 require("f50de0aa433a589b");
 var _global = _interopRequireDefault(require("4142986752a079d4"));
@@ -7188,72 +7190,6 @@ module.exports = function(it, key) {
     return hasOwnProperty.call(it, key);
 };
 
-},{}],"3zDlz":[function(require,module,exports) {
-// this is a js fille that we are going to intregate into our html and then will run on the client side
-// console.log('hello from the client side :D');
-//create a export that will take the array of  locations:
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "displayMap", ()=>displayMap);
-const displayMap = (location)=>{
-    // L => export as namespace L = > the package of the leaflet package
-    var map = L.map("map", {
-        zoomControl: false
-    }); //to disable + - zoom
-    // var map = L.map('map', { zoomControl: false }).setView([31.111745, -118.113491], );
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        crossOrigin: ""
-    }).addTo(map);
-    //a distract of all the cordinates to the map package usinng foreach + settings for the display and output
-    const points = [];
-    location.forEach((loc)=>{
-        points.push([
-            loc.coordinates[1],
-            loc.coordinates[0]
-        ]);
-        L.marker([
-            loc.coordinates[1],
-            loc.coordinates[0]
-        ]).addTo(map).bindPopup(`<p>Day ${loc.day}: ${loc.description}</p>`, {
-            autoClose: false
-        }).openPopup();
-    });
-    const bounds = L.latLngBounds(points).pad(0.5);
-    map.fitBounds(bounds);
-    map.scrollWheelZoom.disable(); //to disable zoom by mouse wheel
-};
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
-exports.interopDefault = function(a) {
-    return a && a.__esModule ? a : {
-        default: a
-    };
-};
-exports.defineInteropFlag = function(a) {
-    Object.defineProperty(a, "__esModule", {
-        value: true
-    });
-};
-exports.exportAll = function(source, dest) {
-    Object.keys(source).forEach(function(key) {
-        if (key === "default" || key === "__esModule" || Object.prototype.hasOwnProperty.call(dest, key)) return;
-        Object.defineProperty(dest, key, {
-            enumerable: true,
-            get: function() {
-                return source[key];
-            }
-        });
-    });
-    return dest;
-};
-exports.export = function(dest, destName, get) {
-    Object.defineProperty(dest, destName, {
-        enumerable: true,
-        get: get
-    });
-};
-
 },{}],"7yHem":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
@@ -7294,7 +7230,7 @@ const logout = async ()=>{
     }
 };
 
-},{"axios":"jo6P5","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./alerts":"6Mcnf"}],"jo6P5":[function(require,module,exports) {
+},{"axios":"jo6P5","./alerts":"6Mcnf","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jo6P5":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "default", ()=>(0, _axiosJsDefault.default));
@@ -7985,7 +7921,37 @@ function bind(fn, thisArg) {
     };
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"cpqD8":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
+exports.interopDefault = function(a) {
+    return a && a.__esModule ? a : {
+        default: a
+    };
+};
+exports.defineInteropFlag = function(a) {
+    Object.defineProperty(a, "__esModule", {
+        value: true
+    });
+};
+exports.exportAll = function(source, dest) {
+    Object.keys(source).forEach(function(key) {
+        if (key === "default" || key === "__esModule" || Object.prototype.hasOwnProperty.call(dest, key)) return;
+        Object.defineProperty(dest, key, {
+            enumerable: true,
+            get: function() {
+                return source[key];
+            }
+        });
+    });
+    return dest;
+};
+exports.export = function(dest, destName, get) {
+    Object.defineProperty(dest, destName, {
+        enumerable: true,
+        get: get
+    });
+};
+
+},{}],"cpqD8":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _utilsJs = require("./../utils.js");
@@ -12015,6 +11981,42 @@ const showAlert = (type, msg)=>{
     window.setTimeout(hideAlert, 5000);
 };
 
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3zDlz":[function(require,module,exports) {
+// this is a js fille that we are going to intregate into our html and then will run on the client side
+// console.log('hello from the client side :D');
+//create a export that will take the array of  locations:
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "displayMap", ()=>displayMap);
+const displayMap = (location)=>{
+    // L => export as namespace L = > the package of the leaflet package
+    var map = L.map("map", {
+        zoomControl: false
+    }); //to disable + - zoom
+    // var map = L.map('map', { zoomControl: false }).setView([31.111745, -118.113491], );
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        crossOrigin: ""
+    }).addTo(map);
+    //a distract of all the cordinates to the map package usinng foreach + settings for the display and output
+    const points = [];
+    location.forEach((loc)=>{
+        points.push([
+            loc.coordinates[1],
+            loc.coordinates[0]
+        ]);
+        L.marker([
+            loc.coordinates[1],
+            loc.coordinates[0]
+        ]).addTo(map).bindPopup(`<p>Day ${loc.day}: ${loc.description}</p>`, {
+            autoClose: false
+        }).openPopup();
+    });
+    const bounds = L.latLngBounds(points).pad(0.5);
+    map.fitBounds(bounds);
+    map.scrollWheelZoom.disable(); //to disable zoom by mouse wheel
+};
+
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"l3cGY":[function(require,module,exports) {
 //create an update data function here , call that function in index.js (export and import inside index.js fille )
 //
@@ -12027,8 +12029,23 @@ var _alerts = require("./alerts");
 const updateSettings = async (data, type)=>{
     try {
         const url = type === "password" ? "http://127.0.0.1:8000/api/v1/users/updateMyPassword" : "http://127.0.0.1:8000/api/v1/users/updateMe";
-        const res = await (0, _axiosDefault.default).patch(url, {
-            data
+        //WHY THIS WAY DIDNT WOKR!
+        // const res = await axios.patch(url, {
+        //   data,
+        // });
+        // When you use axios like this for JSON data:
+        // const res = await axios.patch(url, {
+        //   name: 'John Doe',
+        //   email: 'john.doe@example.com',
+        // });
+        // it works fine because axios automatically sets the Content-Type to application/json and sends the data in the appropriate JSON format.
+        //JSON data does not require the special handling that FormData requires.
+        const res = await (0, _axiosDefault.default)({
+            method: "PATCH",
+            url: url,
+            data: data,
+            headers: {
+            }
         });
         if (res.data.status === "success") (0, _alerts.showAlert)("success", `${type.toUpperCase()} updated successfully!`);
         return;

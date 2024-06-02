@@ -39,15 +39,24 @@ if (loginForm) {
 if (logOutBtn) logOutBtn.addEventListener('click', logout);
 
 if (updateUserForm) {
+  //not sending nothing and recives nothing err
   updateUserForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
+    // const name = document.getElementById('name').value;
+    // const email = document.getElementById('email').value;
+    // we change it becouse we want to use also the upload photo setting and that is inside that form
+    const form = new FormData(); //FormData - recreate multipart form data
+    form.append('name', document.getElementById('name').value);
+    form.append('email', document.getElementById('email').value);
+    form.append('photo', document.getElementById('photo').files[0]); //that comes as an array , in for that we need to collect only the first fille that is the image the user uploaded
 
-    updateSettings({ name, email }, 'data');
+    console.log(document.getElementById('name').value);
+    console.log(document.getElementById('email').value);
+    console.log(document.getElementById('photo').files[0]);
+
+    updateSettings(form, 'data');
   });
 }
-
 if (updateUserPasswordForm) {
   updateUserPasswordForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -60,11 +69,6 @@ if (updateUserPasswordForm) {
       { passwordCurrent, password, passwordConfirm },
       'password'
     );
-
-    document.querySelector('.btn--save-password').textContent = 'Save password';
-    document.getElementById('password-current').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('password-confirm').value = '';
   });
 }
 //from the postman route that we have already build - to compare if the same detaills is simmilar

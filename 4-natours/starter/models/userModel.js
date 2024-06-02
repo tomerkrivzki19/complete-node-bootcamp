@@ -14,8 +14,8 @@ const userSchema = new mongoose.Schema({
     lowercase: true, //transform the email to lower case,
     validate: [validator.isEmail, 'Please provide a valid email'], //validate the email adress jhonas@gmail.com --make sure that the email currect -for that we need to use a validator from npm package
     //         an validaor for emails from the package of validator - check the package in npm for more validaor options
-  },
-  photo: String, //optional in our app
+  }, //                     the default image from our folder
+  photo: { type: String, default: 'default.jpg' }, //optional in our app
   role: {
     //for Authorization!
     type: String,

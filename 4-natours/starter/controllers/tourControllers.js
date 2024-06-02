@@ -1,10 +1,88 @@
 // const fs = require('fs');
+const sharp = require('sharp');
+const multer = require('multer');
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const factory = require('../controllers/handlerFactory');
 
+const multerStorage = multer.memoryStorage(); //saves as a buffer =   חוצץ הוא מקטע זיכרון המאחסן מידע באפן זמני בעת העברתו ממקום למקום
+
+// multer filter:
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Not an image! Please upload only images', 400), false);
+  }
+};
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter,
+});
+
+//function for upload tour images
+//upload.fields => 1 main img and up to 3 images | (the actuall names on the obejcts are the same names that are in our html)
+exports.uploadTourImages = upload.fields([
+  { name: 'imageCover', maxCount: 1 }, // we can have only one field called imageCover that will be procced
+  { name: 'images', maxCount: 3 },
+]);
+
+//if we hade one field that gets many images (with no other fields like at the exmaple above!) , we should impelement that like this:
+// upload.array(' name of the field ', 5 => max number to upload images)
+// for single one
+// upload.single('name of the field ')
+
+exports.resizeTourImages = async (req, res, next) => {
+  try {
+    // if we have multiply files itwill be stored at req.files and not req.file as in the other lectures
+    // console.log(req.files);
+
+    if (!req.files.imageCover || !req.files.images) return next();
+
+    //1) Cover image
+    // we saving the elemnt inside the req.body propartie becouse when we are using the update function we create the function that way it takes an elment from the req.body , this is why we deside to store it there
+    //unique file name
+    req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
+    // we saw in the req.files that the actual images is saved as a buffer inside a buffer verible, and also the whole name of the type(imageCover | images ) saved as an array that contain object with all the data
+    await sharp(req.files.imageCover[0].buffer) // => create an object then we can add some manipulation to that with sharp
+      .resize(2000, 1333) // Wpx |  Hpx |  (3 to 2 ratio what commen in image covers)
+      .toFormat('jpeg') // covert to ''
+      .jpeg({ quality: 90 }) //  for saving memory
+      .toFile(`public/img/tours/${req.body.imageCover}`); // need the entire path to the file
+
+    // imageCover => becouse this is the name that called in our schema definision
+    //2) Images
+    // we creating an empety array becouse we need to push the vurrent file names to that current array
+    req.body.images = [];
+    // exmaple of an problem we got
+    //     req.files.images.forEach(async (file, i) => {
+
+    //when using forEach to move on each and each elemnt we actually having a problem , the problem is that we dont awaiting the rest of the code becouse this asunc await is wating inside the call back function of one of those loop methods
+    //we run to those kind of problems alot and there an solution for that problem:
+    //becouse this function is a async funtion we will return a new promise , and if we do map  we can actually save an array of all of those promises what five us the option to use promise.all(), and wait to the rest of the calles to finish
+    //after all was finished we can move to the rest of the code succesfully
+    await Promise.all(
+      req.files.images.map(async (file, i) => {
+        //                                                     how to cout the num of the img?=> becouse index( i ) is set to 0 and from there we counting each and each elemnt (img fot this exmaple)
+        const filename = `tour-${req.params.id}-${Date.now()}-${i + 1}.jpeg`;
+        await sharp(file.buffer) // => create an object then we can add some manipulation to that with sharp
+          .resize(2000, 1333) // Wpx |  Hpx |  (3 to 2 ratio what commen in image covers)
+          .toFormat('jpeg') // covert to ''
+          .jpeg({ quality: 90 }) //  for saving memory
+          .toFile(`public/img/tours/${filename}`); // need the entire path to the file
+
+        req.body.images.push(filename);
+      })
+    );
+    console.log(req.body);
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 // const toursFile = JSON.parse(
 //   fs.readFileSync('../starter/dev-data/data/tours-simple.json')
 // );

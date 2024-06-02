@@ -26,6 +26,7 @@ router.get('/me', clientControllers.getMe, clientControllers.getClient);
 router.patch(
   '/updateMe',
   clientControllers.uploadUserPhoto,
+  clientControllers.resizeUserPhoto, // manipulate user images that uploaded
   clientControllers.updateMe
 );
 router.delete('/deleteMe', clientControllers.deleteMe);

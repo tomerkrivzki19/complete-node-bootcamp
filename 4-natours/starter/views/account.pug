@@ -32,7 +32,7 @@ block content
           
           //- WITHOUT API
           //-  an post requet from the html method (URL encodeed):
-          //- form.form.form-user-data(action='/submit-user-data' method='POST')
+          //- form.form.form-user-data(action='/submit-user-data' method='POST',enctype='multipart/form-data')
           //-  name='name' => selcting the values for the body 
           
           //- WITH API
@@ -45,7 +45,9 @@ block content
               input#email.form__input(type='email', value=`${user.email}`, required, name='email')
             .form__group.form__photo-upload
               img.form__user-photo(src=`/img/users/${user.photo}`, alt='User photo')
-              a.btn-text(href='') Choose new photo
+              input.form__upload(type='file', accept='image/*', id='photo', name='photo')
+              label(for='photo') Choose new photo
+              
             .form__group.right
               button.btn.btn--small.btn--green Save settings
               

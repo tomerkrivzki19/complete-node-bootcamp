@@ -1,28 +1,35 @@
 const multer = require('multer'); // multer => is a middleware form npm package that is handling multi-part form data , upload filles from a form basiccly
+const sharp = require('sharp');
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('../controllers/handlerFactory');
 
+// Multer Storage
+//saving inside the apllication storage:
 // when we used the multer middle ware to upload file we saw that when the fille is uploaded and saved inside the /img/users folder , we saw that the fille name was long and not understandtable , there was not ending to the fille ( meaning it will not adenify as an img (no img,png etc..)) so to controll our filles that coming from the client we need todo this steps:
 // we need to create one multer storage and one multer filter, and after we defind thier options of creating a fille we going to use them and create a upload from there
-const multerStorage = multer.diskStorage({
-  //                     cb =>callback function
-  destination: (req, file, cb) => {
-    cb(null, 'public/img/users');
-  },
-  filename: (req, file, cb) => {
-    //          userID , Time stemp
-    //user-78769784641551-65656566264.jpeg
-    //exteract the time stemp from the file (we can see the options on req.file) => the (jpeg,png etc...)
-    const ext = file.mimetype.split('/')[1];
-    //caling the calback with no error and the file name
-    cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
-  },
-});
+
+// const multerStorage = multer.diskStorage({
+//   //                     cb =>callback function
+//   destination: (req, file, cb) => {
+//     cb(null, 'public/img/users');
+//   },
+//   filename: (req, file, cb) => {
+//     //          userID , Time stemp
+//     //user-78769784641551-65656566264.jpeg
+//     //exteract the time stemp from the file (we can see the options on req.file) => the (jpeg,png etc...)
+//     const ext = file.mimetype.split('/')[1];
+//     //caling the calback with no error and the file name
+//     cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+//   },
+// });
+
+//saving inside the memory storage:
+const multerStorage = multer.memoryStorage(); //saves as a buffer =   חוצץ הוא מקטע זיכרון המאחסן מידע באפן זמני בעת העברתו ממקום למקום
 
 // multer filter:
-const multerfilter = (req, file, cb) => {
+const multerFilter = (req, file, cb) => {
   // test if the upload fille is an image , and if so pass true to the callback function and if its not we will pass a false to a callback function with an error
   // we do not want to upload fille that its not images , so this is why the function stands for | if in out application we want to upload somthing les , we can make here an function taht will test those sort of filles
   //mimetype => not matter what image file will be uploaded ,inside the  mimetype will allways start with iamge/
@@ -37,10 +44,36 @@ const multerfilter = (req, file, cb) => {
 //  we can add  dest(destination) =>  the folder we want to save all the images, ( on this example we used a separate function for that ....)
 const upload = multer({
   storage: multerStorage,
-  fileFilter: multerfilter,
+  fileFilter: multerFilter,
 });
 
 exports.uploadUserPhoto = upload.single('photo'); //upload.single('photo') => we created a multer package with the name of upload , and the upload is just desing to setup serveral settings where on this exmaple we only find the destination , then we use that upload to create a new middleware that we can add to the stack of the route that we want to use to upload the fille --> for that we use upload.single() , becouse we only have a single fille and in there we specify the name of the fiels its going to hold this fille -  after it hadlaed it will put it on the req as an object (req.file )
+
+//creating a middleware that is manipulate our images that the user upload, what the middleware will do is to convert the image (if the image is a max size ot bigger then what we need ) and convert it to the currect size
+exports.resizeUserPhoto = async (req, res, next) => {
+  try {
+    //we have the file in our req , so if there no upload was done we dont want to do anything
+    if (!req.file) return next();
+
+    //this file.filename is not yet definded becouse when we using a memory storage as a buffer the fille name was not realy get set , but we rellay on it on the other middleware function (in updateMe ) where we rellay the req.file.filename to contain an image of the user ( uploaded one ) to update the image in the database
+    // previslly it was defind by our multer upload settup , but when we cahnge that we now set it on this here
+    req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
+
+    // sharp - package / image procceing libary for node js , resize imaegs in a very simple way
+    // we saving the file inside sharp , and for that we need to make sure that the images that the user upload is saving inside the memory and not in the program first , bexouse we need to manipulate them first !
+    // we basiclly keep the image in memory and here we basically read that  (req.file.buffer) --> that way we dont need to call the image from the folder again and then work on it = best pratic in this way and aslo saving us some code xd
+
+    await sharp(req.file.buffer) // => create an object then we can add some manipulation to that with sharp
+      .resize(500, 500) // Wpx |  Hpx |
+      .toFormat('jpeg') // covert to ''
+      .jpeg({ quality: 90 }) //  for saving memory
+      .toFile(`public/img/users/${req.file.filename}`); // need the entire path to the file
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 //                       rest paramters for the allowed fields -. will create an array with all the elemnts we passed in
 const filterObj = (obj, ...allowedFields) => {
@@ -84,8 +117,6 @@ exports.getAllClients = factory.getAll(User);
 //updating the user data
 exports.updateMe = async (req, res, next) => {
   try {
-    console.log(req.file);
-    console.log(req.body);
     //1) Create an err if the user POSTs password data
     if (req.body.password || req.body.passwordConfirm) {
       return next(
@@ -95,7 +126,6 @@ exports.updateMe = async (req, res, next) => {
         )
       );
     }
-
     // Update the user document -> if not POSTs password data !
     // const user = await User.findById(req.user.id);
     // user.name = 'Jonas';
@@ -113,7 +143,12 @@ exports.updateMe = async (req, res, next) => {
 
     //2)Filtered out unwanted names that are not allowed to be updated
     //the value that the client type inside the body |the proparties we want to filter of
+
     const filteredBody = filterObj(req.body, 'name', 'email'); //we will add some more stuff later like image and more..
+    //adding the image to the actuall user
+    //all we doing here is to add the photo propartie to the object (filteredBody) , that is going to be updated in the model , and that photo propartie is equal to the file name
+
+    if (req.file) filteredBody.photo = req.file.filename;
 
     //3) Update user document
     const updatedUser = await User.findByIdAndUpdate(
@@ -124,6 +159,7 @@ exports.updateMe = async (req, res, next) => {
         runValidators: true, //we want mongoose to validate out data becouse if we put in invalid email adress that should be catch by the validaor  and return an err
       }
     );
+
     res.status(200).json({
       status: 'success',
       data: {
