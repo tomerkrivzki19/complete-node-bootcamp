@@ -7,6 +7,7 @@ import '@babel/polyfill';
 import { login, logout } from './login';
 import { displayMap } from './mapbox';
 import { updateSettings } from './updateSettings';
+import { bookTour } from './stripe';
 // console.log('Hello from parcel'); -> check if the fille work
 
 // FIXEME: having problem with the mapbox when entering to a tour
@@ -17,6 +18,7 @@ const loginForm = document.querySelector('.form--login');
 const logOutBtn = document.querySelector('.nav__el--logout');
 const updateUserForm = document.querySelector('.form-user-data');
 const updateUserPasswordForm = document.querySelector('.form-user-password');
+const bookBtn = document.getElementById('book-tour');
 
 //DELEGATION:
 if (mapbox) {
@@ -30,7 +32,7 @@ if (loginForm) {
     e.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    login(email, password);
+    login(email, password); //check if the err is provided when faield TODO:
   });
 } else {
   console.error('Form element not found');
@@ -77,3 +79,11 @@ if (updateUserPasswordForm) {
 //   "password":"newpassword",
 //   "passwordConfirm":"newpassword"
 // }
+
+if (bookBtn) {
+  bookBtn.addEventListener('click', (e) => {
+    e.target.textContent = 'Processing...';
+    const { tourId } = e.target.dataset; //e.target=> the element that was clicked - will be the button element
+    bookTour(tourId);
+  });
+}

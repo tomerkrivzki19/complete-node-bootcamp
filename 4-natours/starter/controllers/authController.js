@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 //const catchAsync = require('../utils/catchAsync'); // a function that we made instead of trycatch
 const AppError = require('../utils/appError');
-const sendEmail = require('../utils/email');
+const Email = require('../utils/email');
 
 // A global jwt creation function, to save us some time
 const signToken = (id) => {
@@ -53,14 +53,17 @@ exports.singup = async (req, res, next) => {
     //* this setup is saying that we can sighn in as admin , it also make every person that will try to connect as admin
     //const newUser = await User.create(req.body); // in here we are passing an object with the data to the user that we are creating
     //* this setup will make sure that only real person can connect not as admins , and if we want to connect as admin , ve can basicly create us an user in mongoose and use it from there
-    const newUser = await User.create({
-      name: req.body.name,
-      email: req.body.email,
-      password: req.body.password,
-      passwordConfirm: req.body.passwordConfirm,
-      passwordChangedAt: req.body.passwordChangedAt, //FOT THE OPTION OF CHEKING
-      role: req.body.role,
-    });
+    const newUser = await User.create(req.body); //check if works becouse i have change the settings to the origina setting ( data) that sended to the db
+
+    // url => we want to point the user to the account page
+    // const url = 'http://127.0.0.1:8000/me';
+    //we could leave it like this but this will only work on development and not in a prudoction mode, becouse this url does not exist when we are in production, instead of hardcoding this like this we can get that type of data from the requst!
+    //we can get from the req the protocol we using (http / https) and also we can get from the request also the host (127.0.0.1:8000)
+    const url = `${req.protocol}:${req.get('host')}/me`;
+    console.log(url);
+
+    await new Email(newUser, url).sendWelcome();
+
     createSendToken(newUser, 201, res);
 
     // const token = signToken(newUser._id);
@@ -293,20 +296,24 @@ exports.forgotPassword = async (req, res, next) => {
     await user.save({ validateBeforeSave: false }); //now we need to save it
 
     //3) send it to user's email
-    const resetURL = `${req.protocol}://${req.get(
-      'host'
-    )}/api/v1/users/resetPassword/${resetToken}`; //the user click on the email and then she will be abale to do the req from there , we will duplicate that when we nuild our dynamic website
-
-    const message = `Forgot your password? submit a PATCH request with your new password and passwordconfirm to: ${resetURL}.\nif you didn't forget your password, please ignore this email!`;
-
-    //there a way that the sendEmail progress will not succed so there for we want to make more then sending just a err message, we need to set back the password reset token and the password perset exxpired that we defind
     try {
+      const resetURL = `${req.protocol}://${req.get(
+        'host'
+      )}/api/v1/users/resetPassword/${resetToken}`; //the user click on the email and then she will be abale to do the req from there , we will duplicate that when we nuild our dynamic website
+
+      //const message = `Forgot your password? submit a PATCH request with your new password and passwordconfirm to: ${resetURL}.\nif you didn't forget your password, please ignore this email!`;
+
+      //there a way that the sendEmail progress will not succed so there for we want to make more then sending just a err message, we need to set back the password reset token and the password perset exxpired that we defind
       //the sendEmail function is a a-sync function and also she contain an options inside her
-      await sendEmail({
-        email: user.email, // : req.body.email ->  exactly the same
-        subject: 'Your password rest token (valid for 10 min)',
-        message,
-      });
+
+      // await sendEmail({
+      //   email: user.email, // : req.body.email ->  exactly the same
+      //   subject: 'Your password rest token (valid for 10 min)',
+      //   message,
+      // });
+
+      //The New Email constructur method
+      await new Email(user, resetURL).sendPasswordReset();
 
       return res.status(200).json({
         status: 'success',

@@ -151,6 +151,7 @@ var _polyfill = require("@babel/polyfill");
 var _login = require("./login");
 var _mapbox = require("./mapbox");
 var _updateSettings = require("./updateSettings");
+var _stripe = require("./stripe");
 // console.log('Hello from parcel'); -> check if the fille work
 // FIXEME: having problem with the mapbox when entering to a tour
 //DOM ELEMNTS :
@@ -159,6 +160,7 @@ const loginForm = document.querySelector(".form--login");
 const logOutBtn = document.querySelector(".nav__el--logout");
 const updateUserForm = document.querySelector(".form-user-data");
 const updateUserPasswordForm = document.querySelector(".form-user-password");
+const bookBtn = document.getElementById("book-tour");
 //DELEGATION:
 if (mapbox) {
     //extract the data from the div , what we have done in the pug tamplate - we display all the data in the div classname
@@ -169,7 +171,7 @@ if (loginForm) loginForm.addEventListener("submit", (e)=>{
     e.preventDefault();
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-    (0, _login.login)(email, password);
+    (0, _login.login)(email, password); //check if the err is provided when faield TODO:
 });
 else console.error("Form element not found");
 if (logOutBtn) logOutBtn.addEventListener("click", (0, _login.logout));
@@ -200,14 +202,19 @@ if (updateUserPasswordForm) updateUserPasswordForm.addEventListener("submit", as
         passwordConfirm
     }, "password");
 });
- //from the postman route that we have already build - to compare if the same detaills is simmilar
- // {
- //   "passwordCurrent":"pass1234",
- //   "password":"newpassword",
- //   "passwordConfirm":"newpassword"
- // }
+//from the postman route that we have already build - to compare if the same detaills is simmilar
+// {
+//   "passwordCurrent":"pass1234",
+//   "password":"newpassword",
+//   "passwordConfirm":"newpassword"
+// }
+if (bookBtn) bookBtn.addEventListener("click", (e)=>{
+    e.target.textContent = "Processing...";
+    const { tourId } = e.target.dataset; //e.target=> the element that was clicked - will be the button element
+    (0, _stripe.bookTour)(tourId);
+});
 
-},{"@babel/polyfill":"dTCHC","./login":"7yHem","./mapbox":"3zDlz","./updateSettings":"l3cGY"}],"dTCHC":[function(require,module,exports) {
+},{"@babel/polyfill":"dTCHC","./login":"7yHem","./mapbox":"3zDlz","./updateSettings":"l3cGY","./stripe":"10tSC"}],"dTCHC":[function(require,module,exports) {
 "use strict";
 require("f50de0aa433a589b");
 var _global = _interopRequireDefault(require("4142986752a079d4"));
@@ -12055,6 +12062,169 @@ const updateSettings = async (data, type)=>{
     }
 };
 
-},{"axios":"jo6P5","./alerts":"6Mcnf","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["f2QDv"], "f2QDv", "parcelRequire7e89")
+},{"axios":"jo6P5","./alerts":"6Mcnf","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"10tSC":[function(require,module,exports) {
+//now here we need access to the stripe libary again , the package that we insalled before (stripe npm package -used on the backend  ) is only works for the backend
+//and what we need to do on the fronted is actually inculde a scrip on the html ,
+//we added the scripe to the head :   script(src="https://js.stripe.com/v3/" async)
+//and now we can use that in the fronted
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "bookTour", ()=>bookTour);
+var _axios = require("axios");
+var _axiosDefault = parcelHelpers.interopDefault(_axios);
+var _alerts = require("./alerts");
+var _stripeJs = require("@stripe/stripe-js");
+const bookTour = async (tourId)=>{
+    try {
+        const stripe = await (0, _stripeJs.loadStripe)("pk_test_51POKHYITotoxTOIR7OiWCh0dpgMYHwuTJi7KKmS5dCN3Vu381hkLpjnnrbB7WkWQpYfFLtkwOstv9HtWLolTvaAh00zJytBK7N");
+        //the object we get from the script in the pug tamplate
+        //1) Get checkout session from API
+        const session = await (0, _axiosDefault.default)(`http://127.0.0.1:8000/api/v1/bookings/checkout-session/${tourId}`);
+        //needs to return a checkout session
+        console.log(session);
+        //2) Create checkout form + charge credit card
+        await stripe.redirectToCheckout({
+            sessionId: session.data.session.id
+        });
+    //now the user is proccesed to the checkout page where she provide his credit card details ,
+    //for testing in stripe we using thier credit card for testing
+    //4242 4242 4242 4242
+    // any date valid |   222 -any num
+    //any name
+    //we have the option in sprite to send emails for success payments -meaning we dont have to manually emails when the purchest is succesfull
+    } catch (error) {
+        console.log(error);
+        (0, _alerts.showAlert)("error", error);
+    }
+};
+
+},{"axios":"jo6P5","./alerts":"6Mcnf","@stripe/stripe-js":"8ZdZI","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8ZdZI":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _indexMjs = require("../dist/index.mjs");
+parcelHelpers.exportAll(_indexMjs, exports);
+
+},{"../dist/index.mjs":"dHqHx","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dHqHx":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "loadStripe", ()=>loadStripe);
+var V3_URL = "https://js.stripe.com/v3";
+var V3_URL_REGEX = /^https:\/\/js\.stripe\.com\/v3\/?(\?.*)?$/;
+var EXISTING_SCRIPT_MESSAGE = "loadStripe.setLoadParameters was called but an existing Stripe.js script already exists in the document; existing script parameters will be used";
+var findScript = function findScript() {
+    var scripts = document.querySelectorAll('script[src^="'.concat(V3_URL, '"]'));
+    for(var i = 0; i < scripts.length; i++){
+        var script = scripts[i];
+        if (!V3_URL_REGEX.test(script.src)) continue;
+        return script;
+    }
+    return null;
+};
+var injectScript = function injectScript(params) {
+    var queryString = params && !params.advancedFraudSignals ? "?advancedFraudSignals=false" : "";
+    var script = document.createElement("script");
+    script.src = "".concat(V3_URL).concat(queryString);
+    var headOrBody = document.head || document.body;
+    if (!headOrBody) throw new Error("Expected document.body not to be null. Stripe.js requires a <body> element.");
+    headOrBody.appendChild(script);
+    return script;
+};
+var registerWrapper = function registerWrapper(stripe, startTime) {
+    if (!stripe || !stripe._registerWrapper) return;
+    stripe._registerWrapper({
+        name: "stripe-js",
+        version: "3.4.1",
+        startTime: startTime
+    });
+};
+var stripePromise = null;
+var onErrorListener = null;
+var onLoadListener = null;
+var onError = function onError(reject) {
+    return function() {
+        reject(new Error("Failed to load Stripe.js"));
+    };
+};
+var onLoad = function onLoad(resolve, reject) {
+    return function() {
+        if (window.Stripe) resolve(window.Stripe);
+        else reject(new Error("Stripe.js not available"));
+    };
+};
+var loadScript = function loadScript(params) {
+    // Ensure that we only attempt to load Stripe.js at most once
+    if (stripePromise !== null) return stripePromise;
+    stripePromise = new Promise(function(resolve, reject) {
+        if (typeof window === "undefined" || typeof document === "undefined") {
+            // Resolve to null when imported server side. This makes the module
+            // safe to import in an isomorphic code base.
+            resolve(null);
+            return;
+        }
+        if (window.Stripe && params) console.warn(EXISTING_SCRIPT_MESSAGE);
+        if (window.Stripe) {
+            resolve(window.Stripe);
+            return;
+        }
+        try {
+            var script = findScript();
+            if (script && params) console.warn(EXISTING_SCRIPT_MESSAGE);
+            else if (!script) script = injectScript(params);
+            else if (script && onLoadListener !== null && onErrorListener !== null) {
+                var _script$parentNode;
+                // remove event listeners
+                script.removeEventListener("load", onLoadListener);
+                script.removeEventListener("error", onErrorListener); // if script exists, but we are reloading due to an error,
+                // reload script to trigger 'load' event
+                (_script$parentNode = script.parentNode) === null || _script$parentNode === void 0 || _script$parentNode.removeChild(script);
+                script = injectScript(params);
+            }
+            onLoadListener = onLoad(resolve, reject);
+            onErrorListener = onError(reject);
+            script.addEventListener("load", onLoadListener);
+            script.addEventListener("error", onErrorListener);
+        } catch (error) {
+            reject(error);
+            return;
+        }
+    }); // Resets stripePromise on error
+    return stripePromise["catch"](function(error) {
+        stripePromise = null;
+        return Promise.reject(error);
+    });
+};
+var initStripe = function initStripe(maybeStripe, args, startTime) {
+    if (maybeStripe === null) return null;
+    var stripe = maybeStripe.apply(undefined, args);
+    registerWrapper(stripe, startTime);
+    return stripe;
+}; // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+var stripePromise$1;
+var loadCalled = false;
+var getStripePromise = function getStripePromise() {
+    if (stripePromise$1) return stripePromise$1;
+    stripePromise$1 = loadScript(null)["catch"](function(error) {
+        // clear cache on error
+        stripePromise$1 = null;
+        return Promise.reject(error);
+    });
+    return stripePromise$1;
+}; // Execute our own script injection after a tick to give users time to do their
+// own script injection.
+Promise.resolve().then(function() {
+    return getStripePromise();
+})["catch"](function(error) {
+    if (!loadCalled) console.warn(error);
+});
+var loadStripe = function loadStripe() {
+    for(var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++)args[_key] = arguments[_key];
+    loadCalled = true;
+    var startTime = Date.now(); // if previous attempts are unsuccessful, will re-load script
+    return getStripePromise().then(function(maybeStripe) {
+        return initStripe(maybeStripe, args, startTime);
+    });
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["f2QDv"], "f2QDv", "parcelRequire7e89")
 
 //# sourceMappingURL=index.js.map

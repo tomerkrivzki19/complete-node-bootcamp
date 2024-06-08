@@ -14,6 +14,7 @@ const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/clientsRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const viewRouter = require('./routes/viewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 
 const app = express();
 //pug --> a tamplate engin for express
@@ -34,26 +35,67 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //set Security HTTP headers
 // Further HELMET configuration for Security Policy (CSP) --> for the leaflet package instead of mapbox
-const scriptSrcUrls = ['https://unpkg.com/', 'https://tile.openstreetmap.org'];
+
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: false,
+  })
+);
+const scriptSrcUrls = [
+  'https://unpkg.com/',
+  'https://tile.openstreetmap.org',
+  'https://*.cloudflare.com',
+  'https://js.stripe.com',
+
+  'https://js.stripe.com/v3/',
+  'https://checkout.stripe.com',
+];
 const styleSrcUrls = [
   'https://unpkg.com/',
   'https://tile.openstreetmap.org',
   'https://fonts.googleapis.com/',
+  'https://www.myfonts.com/fonts/radomir-tinkov/gilroy/*',
+  'checkout.stripe.com',
 ];
-const connectSrcUrls = ['https://unpkg.com', 'https://tile.openstreetmap.org'];
+const connectSrcUrls = [
+  'https://unpkg.com',
+  'https://tile.openstreetmap.org',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:52191',
+  '*.stripe.com',
+  'https://*.cloudflare.com',
+];
 const fontSrcUrls = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
-      defaultSrc: [],
+      defaultSrc: ["'self'"], // It's a good practice to include 'self' in defaultSrc
       connectSrc: ["'self'", ...connectSrcUrls],
-      scriptSrc: ["'self'", ...scriptSrcUrls],
+      scriptSrc: [
+        "'self'",
+        "'self'",
+        'https://unpkg.com/',
+        'https://tile.openstreetmap.org',
+        'https://cdnjs.cloudflare.com',
+        'https://js.stripe.com/v3',
+        "'unsafe-inline'", // Use cautiously
+        "'unsafe-eval'", // Use cautiously
+        ...scriptSrcUrls,
+      ],
       styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
       workerSrc: ["'self'", 'blob:'],
       objectSrc: [],
       imgSrc: ["'self'", 'blob:', 'data:', 'https:'],
       fontSrc: ["'self'", ...fontSrcUrls],
+      frameSrc: ['*.stripe.com', '*.stripe.network'],
+      scriptSrcElem: [
+        "'self'",
+        'https://unpkg.com/',
+        'https://tile.openstreetmap.org',
+        'https://cdnjs.cloudflare.com',
+        'https://js.stripe.com/v3',
+      ],
     },
   })
 );
@@ -157,6 +199,7 @@ app.use('/', viewRouter);
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
 
 app.all('*', (req, res, next) => {
   //handle all the urls for untyped correctly urls -- err handaling for mispale paths in node.js
