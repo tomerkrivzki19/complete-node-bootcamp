@@ -3,8 +3,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); //this require 
 const sharp = require('sharp');
 const multer = require('multer');
 const Tour = require('../models/tourModel');
+const Booking = require('../models/bookingModel');
 const APIFeatures = require('../utils/apiFeatures');
-const AppError = require('../utils/appError');
 const factory = require('../controllers/handlerFactory');
 
 exports.getCheckoutSession = async (req, res, next) => {
@@ -33,10 +33,12 @@ exports.getCheckoutSession = async (req, res, next) => {
     // });
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      success_url: `${req.protocol}://${req.get('host')}/`,
+      success_url: `${req.protocol}://${req.get('host')}/?tour=${
+        req.params.tourId
+      }&user=${req.user.id}&price=${tour.price}`, //stripe get a get req to that url, this proccess is not secure becouse any one that knews the url can get to that route and book a a tour without having to pay
       cancel_url: `${req.protocol}://${req.get('host')}/tour/${tour.slug}`,
       customer_email: req.user.email,
-      client_reference_id: req.params.tourID,
+      client_reference_id: req.params.tourId,
       line_items: [
         {
           price_data: {
@@ -44,7 +46,7 @@ exports.getCheckoutSession = async (req, res, next) => {
             currency: 'usd',
             product_data: {
               name: `${tour.name} Tour`,
-              images: [`https://www.natours.dev/img/tours/${tour.imageCover}`],
+              images: [`https://www.natours.dev/img/tours/${tour.imageCover}`], //
               description: tour.summary,
             },
           },
@@ -58,6 +60,35 @@ exports.getCheckoutSession = async (req, res, next) => {
       status: 'success',
       session,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//a function that create the new booking in the DB
+exports.createBookingCheckout = async (req, res, next) => {
+  //THIS IS ONLY YEMPRARY beccouse it UNSECURE any one can create booking without paying
+  try {
+    //he req.query property allows you to access the query parameters from the URL of an incoming HTTP request.
+    const { tour, user, price } = req.query;
+    //console.log(req.query);
+    //console.log('1:', tour, user, price); //no output for the user
+
+    //we want to create booking if all of that veribles is avaible
+    if (!tour && !user && !price) return next(); // what is the next middleware? = the next middleware is the end-point that will be hit after the checkout is done , in this case it will be the getOverview page
+    await Booking.create({ tour, user, price });
+    // at this point the next middlewre is basiclly home page , based on this lecture when the site is not depoloyed the success url is conatin with all the data with the tour that was purchest, what makes it in-secure .
+    //next();
+    //to make that based on the situation we can make it mure secure by pathing the url to the regular one , meaning chnging the path to not revel the success url path
+
+    //redirect => will make a new request to the new url
+    //originUrl => the entire URL basiclly which the req came
+    res.redirect(req.originalUrl.split('?')[0]); // we spilt that with with the question mark becouse the question mark is the devider of what we want to get ( the url we want to pressent to the customer )
+
+    //summary:
+    //what will be is that when there a new booking the {tour, user, price} is defind , so what is going to happend
+    //is that we will redirect ,( what make the page to render with a new get request to the new url), and after the seconed type it will render and get tot the url with that middlware the tour, user, price will be empty
+    //meaning it will go to the next middleware and not to the success url
   } catch (error) {
     next(error);
   }

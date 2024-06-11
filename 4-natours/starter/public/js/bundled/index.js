@@ -12086,7 +12086,7 @@ const bookTour = async (tourId)=>{
         await stripe.redirectToCheckout({
             sessionId: session.data.session.id
         });
-    //now the user is proccesed to the checkout page where she provide his credit card details ,
+    //now the user is proccesed to the checkout page where she provide his credit card details ,d
     //for testing in stripe we using thier credit card for testing
     //4242 4242 4242 4242
     // any date valid |   222 -any num

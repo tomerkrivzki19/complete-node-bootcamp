@@ -26,6 +26,7 @@ exports.getTour = async (req, res, next) => {
     // 1) get the data , for the requested tour (including reviews and guides)
     //the guides is already puplate in the schema ,
     // we need to pupolate the reviews also.
+
     const tour = await Tour.findOne({ slug: req.params.slug }).populate({
       path: 'reviews',
       fields: 'review rating user',

@@ -203,6 +203,7 @@ exports.protect = async (req, res, next) => {
     // put the intire user data on the req:
     req.user = currentUser; // we puting inside req.user the new user data!, that way the data will be avaible in next middleware function , this req bject travels from middleware to middleware
     res.locals.user = currentUser; //we puting both current user inside req.user and res.locals.user , so we can automaticly use that on all tamplates when we want
+
     next();
   } catch (error) {
     next(error);
