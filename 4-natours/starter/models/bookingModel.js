@@ -28,9 +28,9 @@ const bookingSchema = new mongoose.Schema({
 });
 
 //query middleware
-bookingSchema.pre('/^find/', function (next) {
+bookingSchema.pre(/^find/, function (next) {
   //for guide to check who booked their tours
-  this.populate('users').populate({
+  this.populate('user').populate({
     //only want to populate the tour name
     path: 'tour',
     select: 'name',

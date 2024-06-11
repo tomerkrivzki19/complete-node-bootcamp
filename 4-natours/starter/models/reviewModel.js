@@ -70,7 +70,7 @@ reviewSchema.statics.calcAverageRatings = async function (tourId) {
       },
     },
   ]);
-  console.log(stats);
+  // console.log(stats);
   // on this proccess we created the function that cancuklating the avarge reviews ,
   //to procecss it and save it to the db with the new average wedoing this :
 

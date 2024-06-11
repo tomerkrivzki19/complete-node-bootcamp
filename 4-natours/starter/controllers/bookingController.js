@@ -6,6 +6,7 @@ const Tour = require('../models/tourModel');
 const Booking = require('../models/bookingModel');
 const APIFeatures = require('../utils/apiFeatures');
 const factory = require('../controllers/handlerFactory');
+const AppError = require('../utils/appError');
 
 exports.getCheckoutSession = async (req, res, next) => {
   try {
@@ -93,3 +94,64 @@ exports.createBookingCheckout = async (req, res, next) => {
     next(error);
   }
 };
+
+//mission answers:
+// exports.createBooking = async (req, res, next) => {
+//   try {
+//     const { tour, user, price } = req.body;
+//     if (!tour && !user && !price) {
+//       return new AppError('Missing inforamtion! Please complete all ..', 400);
+//     }
+
+//     const booking = await Booking.create({ tour, user, price });
+
+//     res.status(200).json({
+//       status: 'success',
+//       booking,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+// exports.getBooking = async (req, res, next) => {
+//   try {
+//     const tour = await Tour.findById(req.params.id);
+
+//     if (!tour) return new AppError('no tour was found ', 404);
+
+//     res.status(200).json({
+//       status: 'success',
+//       data: {
+//         tour,
+//       },
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+// exports.updateBooking = async (req, res, next) => {
+//   try {
+//     const doc = await Booking.findByIdAndUpdate(req.params.id, req.body, {
+//       //options for updating - we have used that before
+//       new: true,
+//       runValidators: true,
+//     });
+
+//     if (!doc) return new AppError('No document found with that ID', 404);
+
+//     res.status(200).json({
+//       status: 'success',
+//       data: {
+//         doc,
+//       },
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+exports.createBooking = factory.createOne(Booking);
+exports.getBooking = factory.getOne(Booking);
+exports.getAllBookings = factory.getAll(Booking);
+exports.updateBooking = factory.updateOne(Booking);
+exports.deleteBooking = factory.deleteOne(Booking);

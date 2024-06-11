@@ -227,3 +227,33 @@ app.use(globalErrorHandler);
 //START THE SERVER
 // (inside the server js file)
 module.exports = app;
+
+//challenges: (lecture 217)
+// *) implement restriction that users can onlt review a tour that they have actually booked
+// *) implement nested booking routes , for example getting all the bookigs for a certin tour and getting all the bookings for a certing user based on ids , routes: /tours/:id/bookings and /users/:id/bookings
+// *) improve tour dates: add a participants and a soldOut feld to each date. a date then bacomes like an instance of the tour. then ,when a user book, they need to select on of the dates. A new booking will increase the number of prativipants in the date, until it is booked out (participants > maxGroupSize). so when a user wants to book, you need to check if tour on the selected date is still available
+// *) implement advanced authentication features : conform user email, keep users logged in with refresh token ,two-factor authentication - when a user logged in they recive a text message to the phonewith a text message that they need to implement to proccied,etc..
+// *) implement a sign up form , similar to the login form
+// *) on a tour detail page, if a user has taken a tour , allow them add a review directly on the website. Implement a from for this -> need to check if the logged in user has actually booked the current tour and also if the time of the tour has already passed and if so we can add a from to the page that the user can then add a new review for example using our review API
+// *) hide the entire booking section on the tour detail page if current user has already booked the tour (also prevent duplicate bookings on the model ) =>
+// *) implement "like tour" functionality, with favourite tour page
+// *) on the user account page, implement the "My Reviews" page , where all reviews are displayed, and a user can edit them. (if you know React, this would be an amazing way to use the Natours API and train your skills! )
+// *) For the administrators, implement all the "Manage" pages,where they can CRUD(create,tead,update,delete)tours,users,reviews and bookings.
+// *)
+
+//MORE ARREGEND :
+// CHALLENGES API
+
+// - Implement restriction that users can only review a tour that they have actually booked;
+// - Implement nested booking routes: /tours/:id/bookings and /users/:id/bookings;
+// - Improve tour dates: add a participants and soldOut field to each date. A date then becomes an instance of the tour. Then, when a user boooks, they need to select one of the dates. A new booking will increase the number of participants in the date, until it is booked out(participants > maxGroupSize). So when a user wants to book, you need to check if tour on the selected date is still available;
+// - Implement advanced authentication features: confirm user email, keep users logged in with refresh tokens, two-factor authentication, etc.
+
+// CHALLENGES WEBSITE
+
+// - Implement a sign up form, similar to login form;
+// - On the tour detail page, if a user has taken a tour, allow them add a review directly on the website. Implement a form for this.
+// - Hide the entire booking section on the detail page if current user has already booked the tour(also prevent duplicate bookings on the model);
+// - Implement "like tour" functionality, with fav tour page;
+// - On the user account page, implement the "My Reviews" page, wehere all reviews are displayed, and a user can edit them. (If you know REACT, this would be an amazing way to use the Natours API and train your skills!);
+// - For administrators, implement all the "Manage" pages, where they can CRUD tours, users, reviews and bookings.

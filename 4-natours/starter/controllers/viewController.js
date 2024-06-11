@@ -1,5 +1,7 @@
 const Tour = require('../models/tourModel');
 const User = require('../models/userModel');
+const Booking = require('../models/bookingModel');
+
 const AppError = require('../utils/appError');
 
 exports.getOverview = async (req, res, next) => {
@@ -68,6 +70,29 @@ exports.getAccount = (req, res) => {
   res.status(200).render('account', {
     title: 'Your account',
   });
+};
+
+exports.getMyTours = async (req, res, next) => {
+  try {
+    //to find all the bookings for the currently logged-in users ,which will then give us a bunch of tours IDs and then we will find those tours with their IDs
+    //1) Find all bookings |     tour most be equal to req.user.id ( current user id)
+    const bookings = await Booking.find({ user: req.user.id }); //each user have  a user id (in the booking model)
+
+    //2) Find tours with the returned IDs
+    //create an array of all ids and then after that query for tours that have one of those id's
+    const toursIDs = bookings.map((el) => el.tour); //what it will do ? this will loops through the entire bookings array and on each element and it will grab the el.tour => and in the end we will have a nice array with the tours ID's in there
+    //afrer we get the array of all tours ids (toursIDs) , we can get the tours corresponding to those IDs
+    const tours = await Tour.find({ _id: { $in: toursIDs } }); //we want to find by id , we can't use findById becouse here we will need a new operator for that,
+    //tours - what is going to do? => will select all the tours which have an ID which is in ($in operator) the tourIDs array --> this is a way of doing manualy instead of just foing virtual populate like we did before
+
+    //we sending here the overview pug tamplate ,with new data basically
+    res.status(200).render('overview', {
+      title: 'My Tours',
+      tours,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 exports.updateUserData = async (req, res, next) => {
