@@ -77,7 +77,7 @@ const sendErrorProd = (err, req, res) => {
   // B) RENDERED WEBITE
   //A) Operational,trusted error : send message to the client
   if (err.isOperational) {
-    console.log(err);
+    // console.log(err);
     // err.isOperational -> the proparty that we set to true inside of the error class that we created
     return res.status(err.statusCode).render('error', {
       //the data we want to send to the pug tamplate

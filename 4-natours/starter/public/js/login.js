@@ -3,10 +3,10 @@ import { showAlert } from './alerts';
 
 export const login = async (email, password) => {
   try {
-    console.log(email, password);
+    // console.log(email, password);
     // axios => call api instead of resolve reject promisess | we imported the axios package as cdn in the base scripts
-    //resolve -> !(not) response
-    const res = await axios.post('http://127.0.0.1:8000/api/v1/users/login', {
+    //resolve -> !(not) response | /api/v1/users/login => we sorted the route becouse we are working on backend and the url in the production and on the development site are the same , if we hade for exmaple rendered app with client side also like react that will not worked
+    const res = await axios.post('/api/v1/users/login', {
       email,
       password,
     });
@@ -27,10 +27,11 @@ export const login = async (email, password) => {
 
 export const logout = async () => {
   try {
-    const res = await axios.get('http://127.0.0.1:8000/api/v1/users/logout');
+    const res = await axios.get('/api/v1/users/logout');
     // location.reload() => will reload the page |  location.reload(true) => will force a reload the server and not from the broswer
     if (res.data.status === 'success') location.reload(true);
   } catch (error) {
+    console.log(err.response);
     showAlert('error', 'Error logging out! Try again .');
   }
 };

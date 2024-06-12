@@ -7,6 +7,7 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParer = require('cookie-parser');
+const compresion = require('compresion');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
@@ -161,6 +162,9 @@ app.use(
     ], //simply array of proparties that we actually aloow to duplicate
   })
 ); // to prevent
+
+//compresion -> will compress all text files (not included images) that will eventually send to the client , its a part of deploying our website
+app.use(compresion()); // will return a middleware function that will then going to compress all the text that send to clients
 
 //Test middleware
 app.use((req, res, next) => {

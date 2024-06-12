@@ -60,7 +60,7 @@ exports.singup = async (req, res, next) => {
     //we could leave it like this but this will only work on development and not in a prudoction mode, becouse this url does not exist when we are in production, instead of hardcoding this like this we can get that type of data from the requst!
     //we can get from the req the protocol we using (http / https) and also we can get from the request also the host (127.0.0.1:8000)
     const url = `${req.protocol}:${req.get('host')}/me`;
-    console.log(url);
+    // console.log(url);
 
     await new Email(newUser, url).sendWelcome();
 

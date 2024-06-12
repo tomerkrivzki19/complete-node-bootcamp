@@ -234,12 +234,12 @@ tourSchema.pre(/^find/, function (next) {
 //this method is working only for find , not findOne
 //this is the soultion : the first sulotion is to vopy and change to findOne-not the best practic | the seconde solution for this is ansered up in the hook section
 
-//will activate after the query alredy exuecuted
-tourSchema.post(/^find/, function (docs, next) {
-  console.log(`Query took ${Date.now() - this.start} miliseconeds!`);
-  // console.log(docs);
-  next();
-});
+//will activate after the query alredy exuecuted - testing for post midleware
+// tourSchema.post(/^find/, function (docs, next) {
+//   console.log(`Query took ${Date.now() - this.start} miliseconeds!`);
+//   // console.log(docs);
+//   next();
+// });
 
 //צבירה
 //AGGERATION MIDDLEWARE -- aloow us to add hooks before and after the aggreation happens

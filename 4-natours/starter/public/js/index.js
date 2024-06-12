@@ -52,9 +52,9 @@ if (updateUserForm) {
     form.append('email', document.getElementById('email').value);
     form.append('photo', document.getElementById('photo').files[0]); //that comes as an array , in for that we need to collect only the first fille that is the image the user uploaded
 
-    console.log(document.getElementById('name').value);
-    console.log(document.getElementById('email').value);
-    console.log(document.getElementById('photo').files[0]);
+    // console.log(document.getElementById('name').value);
+    // console.log(document.getElementById('email').value);
+    // console.log(document.getElementById('photo').files[0]);
 
     updateSettings(form, 'data');
   });
