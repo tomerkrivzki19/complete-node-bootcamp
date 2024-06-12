@@ -165,7 +165,8 @@ app.use(
 
 //compresion -> will compress all text files (not included images) that will eventually send to the client , its a part of deploying our website
 app.use(compresion()); // will return a middleware function that will then going to compress all the text that send to clients
-
+//basiclly after enableing that when the site deployed , it will take a samller size meaning the site will preforme beeter
+//we can look that out and check it in the site , search test gzip compression
 //Test middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
